@@ -18,13 +18,6 @@ import MemberDashboard from "./Pages/Dashboard/MemberDashboard";
 
 import ProtectedRoute from "./component/ProtectedRoutes";
 
-// Example: current logged-in user
-// You can replace this with actual auth state from context or redux
-const user = {
-  name: "John Doe",
-  role: "chairperson", // "member" or "chairperson"
-};
-
 export default function App() {
   return (
     <>
@@ -44,12 +37,12 @@ export default function App() {
         {/* 🔐 Dashboard Pages */}
         <Route path="/dashboard" element={<DashboardLayout />}>
           {/* Chairperson only */}
-          <Route element={<ProtectedRoute user={user} roles={["chairperson"]} />}>
+          <Route element={<ProtectedRoute roles={["chairperson"]} />}>
             <Route path="chairperson" element={<ChairpersonDashboard />} />
           </Route>
 
           {/* Member only */}
-          <Route element={<ProtectedRoute user={user} roles={["member"]} />}>
+          <Route element={<ProtectedRoute roles={["member"]} />}>
             <Route path="member" element={<MemberDashboard />} />
           </Route>
         </Route>

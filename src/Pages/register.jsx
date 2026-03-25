@@ -2,6 +2,7 @@ import React, { useState, useRef, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Upload, CheckCircle, Copy } from "lucide-react";
 
+
 export default function RegisterChama() {
   const [step, setStep] = useState(1);
   const [loading, setLoading] = useState(false);
@@ -40,23 +41,12 @@ export default function RegisterChama() {
     inviteLink: "",
   });
 
-  // utils
-  const makeSlug = (name) =>
-    name
-      .toLowerCase()
-      .trim()
-      .replace(/[^a-z0-9]+/g, "-")
-      .replace(/(^-|-$)/g, "")
-      .slice(0, 12);
+  // ----------------------
+  // UTILS
+  // ----------------------
 
-  const generateChamaCode = (name) => {
-    const prefix = "sm";
-    const slug = (chama.shortName || makeSlug(name) || "cha").slice(0, 3);
-    const seq = Math.floor(1 + Math.random() * 999)
-      .toString()
-      .padStart(3, "0");
-    return `${prefix}-${slug}-${seq}`;
-  };
+
+
 
   const copyToClipboard = async (text) => {
     try {
@@ -70,55 +60,92 @@ export default function RegisterChama() {
   const onProfileChange = (e) => {
     const f = e.target.files?.[0];
     if (!f) return;
-    if (profilePreview) URL.revokeObjectURL(profilePreview); // cleanup old preview
+    if (profilePreview) URL.revokeObjectURL(profilePreview); 
     setProfilePreview(URL.createObjectURL(f));
   };
 
-  // inline validation
+  // ----------------------
+  // VALIDATION
+  // ----------------------
   const validateStep = () => {
-    if (step === 1) {
-      if (!chama.name) return "Please enter the Chama name.";
-    }
-    if (step === 2) {
-      if (!meta.description) return "Please add a short description.";
-    }
-    if (step === 3) {
-      if (!chair.fullName || !chair.email)
-        return "Please fill your personal details.";
-    }
+    if (step === 1 && !chama.name) return "Please enter the Chama name.";
+    if (step === 2 && !meta.description) return "Please add a short description.";
+    if (step === 3 && (!chair.fullName || !chair.email))
+      return "Please fill your personal details.";
     if (step === 4) {
       if (!security.password || !security.confirmPassword)
         return "Please enter and confirm your password.";
       if (security.password !== security.confirmPassword)
         return "Passwords do not match.";
-      if (!security.acceptTerms)
-        return "Please accept the terms to continue.";
+      if (!security.acceptTerms) return "Please accept the terms to continue.";
     }
     return "";
   };
 
-  const handleNext = async () => {
-    const validationError = validateStep();
-    if (validationError) {
-      setError(validationError);
-      return;
-    }
-    setError("");
+  // ----------------------
+  // HANDLE NEXT
+  // ----------------------
+ const handleNext = async () => {
+  const validationError = validateStep();
+  if (validationError) {
+    setError(validationError);
+    return;
+  }
 
-    if (step === 4) {
+  setError("");
+
+  if (step === 4) {
+    try {
       setLoading(true);
-      setTimeout(() => {
-        const code = generateChamaCode(chama.name);
-        const link = `${window.location.origin}/join/${code}`;
-        setGenerated({ chamaCode: code, inviteLink: link });
-        setLoading(false);
-        setStep(5);
-      }, 700);
-      return;
-    }
 
-    setStep((s) => s + 1);
-  };
+      const token = localStorage.getItem("access");
+      if (!token) {
+        setError("You must be logged in.");
+        return;
+      }
+
+      const res = await fetch("http://127.0.0.1:8000/api/chamas/", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          name: chama.name,
+          short_name: chama.shortName,
+          chama_type: chama.type,
+          contribution_frequency: chama.contributionFrequency,
+          description: meta.description,
+          rules: meta.rules,
+          meeting_schedule: meta.meetingSchedule,
+        }),
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        throw new Error(data.detail || "Failed to create chama");
+      }
+
+      setGenerated({
+        chamaCode: data.code,
+        inviteLink: `${window.location.origin}/join/${data.invite_token}`,
+      });
+
+      setStep(5);
+    } catch (err) {
+      console.error(err);
+      setError("Failed to create Chama.");
+    } finally {
+      setLoading(false);
+    }
+    return;
+  }
+
+  setStep((s) => s + 1);
+};
+
+
 
   const handleBack = () => {
     if (step > 1) {
@@ -134,6 +161,9 @@ export default function RegisterChama() {
     };
   }, [profilePreview]);
 
+  // ----------------------
+  // RENDER
+  // ----------------------
   return (
     <main className="min-h-screen bg-linear-to-b from-green-50 to-white py-12 px-4">
       <div className="max-w-3xl mx-auto">
@@ -157,37 +187,18 @@ export default function RegisterChama() {
                   />
                 </div>
                 <div className="flex justify-between mt-2">
-                  <span
-                    className={step >= 1 ? "text-green-700 font-medium" : "text-gray-500"}
-                  >
-                    Chama
-                  </span>
-                  <span
-                    className={step >= 2 ? "text-green-700 font-medium" : "text-gray-500"}
-                  >
-                    Description
-                  </span>
-                  <span
-                    className={step >= 3 ? "text-green-700 font-medium" : "text-gray-500"}
-                  >
-                    Chairperson
-                  </span>
-                  <span
-                    className={step >= 4 ? "text-green-700 font-medium" : "text-gray-500"}
-                  >
-                    Security
-                  </span>
-                  <span
-                    className={step === 5 ? "text-green-700 font-medium" : "text-gray-500"}
-                  >
-                    Done
-                  </span>
+                  <span className={step >= 1 ? "text-green-700 font-medium" : "text-gray-500"}>Chama</span>
+                  <span className={step >= 2 ? "text-green-700 font-medium" : "text-gray-500"}>Description</span>
+                  <span className={step >= 3 ? "text-green-700 font-medium" : "text-gray-500"}>Chairperson</span>
+                  <span className={step >= 4 ? "text-green-700 font-medium" : "text-gray-500"}>Security</span>
+                  <span className={step === 5 ? "text-green-700 font-medium" : "text-gray-500"}>Done</span>
                 </div>
               </div>
             </div>
           </div>
         </div>
 
+        {/* Form Card */}
         <div className="bg-white rounded-2xl shadow-lg border border-gray-100 p-6">
           <AnimatePresence mode="wait">
             {/* STEP 1 */}
@@ -199,10 +210,7 @@ export default function RegisterChama() {
                 exit={{ opacity: 0, y: -10 }}
                 transition={{ duration: 0.25 }}
               >
-                <h2 className="text-xl font-semibold text-gray-800 mb-4">
-                  Step 1 — Chama details
-                </h2>
-
+                <h2 className="text-xl font-semibold text-gray-800 mb-4">Step 1 — Chama details</h2>
                 <label className="block text-sm text-gray-600 mb-1">Chama name</label>
                 <input
                   value={chama.name}
@@ -210,7 +218,6 @@ export default function RegisterChama() {
                   placeholder="e.g. Tustahimili"
                   className="w-full p-3 rounded-lg border border-gray-200 mb-4 focus:ring-2 focus:ring-green-500 outline-none"
                 />
-
                 <label className="block text-sm text-gray-600 mb-1">Short name (optional)</label>
                 <input
                   value={chama.shortName}
@@ -218,7 +225,6 @@ export default function RegisterChama() {
                   placeholder="three-letter short slug (e.g. tsm)"
                   className="w-full p-3 rounded-lg border border-gray-200 mb-4 focus:ring-2 focus:ring-green-500 outline-none"
                 />
-
                 <label className="block text-sm text-gray-600 mb-1">Chama type</label>
                 <select
                   value={chama.type}
@@ -229,13 +235,10 @@ export default function RegisterChama() {
                   <option value="investment">Investment</option>
                   <option value="rotational">Rotational</option>
                 </select>
-
                 <label className="block text-sm text-gray-600 mb-1">Contribution frequency</label>
                 <select
                   value={chama.contributionFrequency}
-                  onChange={(e) =>
-                    setChama({ ...chama, contributionFrequency: e.target.value })
-                  }
+                  onChange={(e) => setChama({ ...chama, contributionFrequency: e.target.value })}
                   className="w-full p-3 rounded-lg border border-gray-200 mb-4 focus:ring-2 focus:ring-green-500 outline-none"
                 >
                   <option value="weekly">Weekly</option>
@@ -254,10 +257,7 @@ export default function RegisterChama() {
                 exit={{ opacity: 0, y: -10 }}
                 transition={{ duration: 0.25 }}
               >
-                <h2 className="text-xl font-semibold text-gray-800 mb-4">
-                  Step 2 — Description & rules
-                </h2>
-
+                <h2 className="text-xl font-semibold text-gray-800 mb-4">Step 2 — Description & rules</h2>
                 <label className="block text-sm text-gray-600 mb-1">Short description</label>
                 <textarea
                   value={meta.description}
@@ -266,7 +266,6 @@ export default function RegisterChama() {
                   placeholder="Describe the purpose and goals of the chama..."
                   className="w-full p-3 rounded-lg border border-gray-200 mb-3 focus:ring-2 focus:ring-green-500 outline-none"
                 />
-
                 <label className="block text-sm text-gray-600 mb-1">Rules / meeting schedule (optional)</label>
                 <textarea
                   value={meta.rules}
@@ -275,7 +274,6 @@ export default function RegisterChama() {
                   placeholder="Add rules, meeting schedule, penalties, decision-making rules..."
                   className="w-full p-3 rounded-lg border border-gray-200 mb-3 focus:ring-2 focus:ring-green-500 outline-none"
                 />
-
                 <label className="block text-sm text-gray-600 mb-1">Meeting schedule (optional)</label>
                 <input
                   value={meta.meetingSchedule}
@@ -295,10 +293,7 @@ export default function RegisterChama() {
                 exit={{ opacity: 0, y: -10 }}
                 transition={{ duration: 0.25 }}
               >
-                <h2 className="text-xl font-semibold text-gray-800 mb-4">
-                  Step 3 — Chairperson details
-                </h2>
-
+                <h2 className="text-xl font-semibold text-gray-800 mb-4">Step 3 — Chairperson details</h2>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
                     <label className="block text-sm text-gray-600 mb-1">Full name</label>
@@ -309,7 +304,6 @@ export default function RegisterChama() {
                       className="w-full p-3 rounded-lg border border-gray-200 focus:ring-2 focus:ring-green-500 outline-none"
                     />
                   </div>
-
                   <div>
                     <label className="block text-sm text-gray-600 mb-1">Email</label>
                     <input
@@ -319,7 +313,6 @@ export default function RegisterChama() {
                       className="w-full p-3 rounded-lg border border-gray-200 focus:ring-2 focus:ring-green-500 outline-none"
                     />
                   </div>
-
                   <div>
                     <label className="block text-sm text-gray-600 mb-1">Phone</label>
                     <input
@@ -329,7 +322,6 @@ export default function RegisterChama() {
                       className="w-full p-3 rounded-lg border border-gray-200 focus:ring-2 focus:ring-green-500 outline-none"
                     />
                   </div>
-
                   <div>
                     <label className="block text-sm text-gray-600 mb-1">National ID (optional)</label>
                     <input
@@ -371,10 +363,7 @@ export default function RegisterChama() {
                 exit={{ opacity: 0, y: -10 }}
                 transition={{ duration: 0.25 }}
               >
-                <h2 className="text-xl font-semibold text-gray-800 mb-4">
-                  Step 4 — Security
-                </h2>
-
+                <h2 className="text-xl font-semibold text-gray-800 mb-4">Step 4 — Security</h2>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
                     <label className="block text-sm text-gray-600 mb-1">Create password</label>
@@ -386,19 +375,19 @@ export default function RegisterChama() {
                       className="w-full p-3 rounded-lg border border-gray-200 focus:ring-2 focus:ring-green-500 outline-none"
                     />
                   </div>
-
                   <div>
                     <label className="block text-sm text-gray-600 mb-1">Confirm password</label>
                     <input
                       type="password"
                       value={security.confirmPassword}
-                      onChange={(e) => setSecurity({ ...security, confirmPassword: e.target.value })}
+                      onChange={(e) =>
+                        setSecurity({ ...security, confirmPassword: e.target.value })
+                      }
                       placeholder="Repeat password"
                       className="w-full p-3 rounded-lg border border-gray-200 focus:ring-2 focus:ring-green-500 outline-none"
                     />
                   </div>
                 </div>
-
                 <div className="mt-4">
                   <label className="flex items-center gap-3">
                     <input
@@ -429,12 +418,10 @@ export default function RegisterChama() {
                 <div className="inline-block bg-green-50 p-4 rounded-full mb-4">
                   <CheckCircle className="w-10 h-10 text-green-600" />
                 </div>
-
                 <h2 className="text-2xl font-bold text-green-700 mb-2">Chama Created</h2>
                 <p className="text-gray-600 mb-4">
                   Your invite link is ready — share it with members to let them join.
                 </p>
-
                 <div className="bg-white border border-green-100 rounded-lg p-4 mb-4">
                   <p className="text-sm text-gray-500">Chama code</p>
                   <div className="font-mono font-semibold text-lg">{generated.chamaCode}</div>
@@ -456,7 +443,7 @@ export default function RegisterChama() {
                   </a>
                   <button
                     onClick={() => {
-                      if(profilePreview) URL.revokeObjectURL(profilePreview);
+                      if (profilePreview) URL.revokeObjectURL(profilePreview);
                       setStep(1);
                       setChama({ name: "", shortName: "", type: "savings", contributionFrequency: "monthly" });
                       setMeta({ description: "", rules: "", meetingSchedule: "" });

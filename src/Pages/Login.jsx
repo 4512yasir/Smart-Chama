@@ -4,55 +4,91 @@ import { Eye, EyeOff, Lock, Mail } from "lucide-react";
 import toast from "react-hot-toast";
 import logo from "../assets/smartchamalogo.jpeg";
 
+const LOGIN_URL = "http://127.0.0.1:8000/api/auth/login/";
+const ME_URL = "http://127.0.0.1:8000/api/auth/me/";
+
 export default function LoginPage() {
-  const [showPassword, setShowPassword] = useState(false);
-  const [credentials, setCredentials] = useState({ identifier: "", password: "" });
-  const [error, setError] = useState("");
   const navigate = useNavigate();
+  const [showPassword, setShowPassword] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [credentials, setCredentials] = useState({
+    identifier: "",
+    password: "",
+  });
 
   const handleLogin = async (e) => {
     e.preventDefault();
-    const { identifier, password } = credentials;
 
-    if (!identifier || !password) {
-      setError("Please enter both email/phone and password.");
-      toast.error("All fields are required.");
+    if (!credentials.identifier || !credentials.password) {
+      toast.error("All fields are required");
       return;
     }
 
     try {
-      // Call your backend API
-      const res = await fetch("https://your-backend-api.com/auth/login", {
+      setLoading(true);
+
+      /* =========================
+         1. LOGIN (JWT)
+      ========================== */
+      const loginRes = await fetch(LOGIN_URL, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ identifier, password }),
+        body: JSON.stringify(credentials),
       });
 
-      const data = await res.json();
+      const loginData = await loginRes.json();
 
-      if (!res.ok) {
-        setError(data.message || "Invalid credentials");
-        toast.error(data.message || "Invalid credentials");
+      if (!loginRes.ok) {
+        toast.error("Invalid credentials");
         return;
       }
 
-      // On success, data should contain role: "chairperson" | "member"
-      toast.success("Login successful! Redirecting...", { duration: 1500 });
+      // Save tokens
+      localStorage.setItem("access", loginData.access);
+      localStorage.setItem("refresh", loginData.refresh);
 
-      if (data.role === "chairperson") navigate("/dashboard/chairperson");
-      else if (data.role === "member") navigate("/dashboard/member");
-      else navigate("/"); // fallback
-    } catch (err) {
-      console.error(err);
-      setError("Server error. Please try again later.");
-      toast.error("Server error. Please try again later.");
+      /* =========================
+         2. FETCH CURRENT USER
+      ========================== */
+      const meRes = await fetch(ME_URL, {
+        headers: {
+          Authorization: `Bearer ${loginData.access}`,
+        },
+      });
+
+      const user = await meRes.json();
+
+      if (!meRes.ok) {
+        toast.error("Failed to fetch user profile");
+        return;
+      }
+
+      localStorage.setItem("user", JSON.stringify(user));
+
+      toast.success("Login successful");
+
+      /* =========================
+         3. ROLE-BASED REDIRECT
+      ========================== */
+      if (user.role === "chairperson") {
+        navigate("/dashboard/chairperson");
+      } else {
+        navigate("/dashboard/member");
+      }
+
+    } catch (error) {
+      console.error(error);
+      toast.error("Server error. Try again later.");
+    } finally {
+      setLoading(false);
     }
   };
 
   return (
     <main className="min-h-screen bg-linear-to-br from-green-50 via-white to-green-100 flex items-center justify-center px-4">
       <div className="w-full max-w-5xl grid md:grid-cols-2 bg-white rounded-3xl shadow-xl overflow-hidden">
-        {/* LEFT BRAND SECTION */}
+
+        {/* LEFT BRAND */}
         <div className="hidden md:flex flex-col justify-center bg-green-600 text-white p-12">
           <div className="flex items-center gap-3 mb-10">
             <img
@@ -64,75 +100,83 @@ export default function LoginPage() {
               Smart<span className="text-green-200">Chama</span>
             </h1>
           </div>
-          <h2 className="text-4xl font-bold leading-tight mb-6">Welcome Back 👋</h2>
-          <p className="text-green-100 text-lg leading-relaxed">
-            Log in to manage your Chama, track contributions, and grow together securely.
+
+          <h2 className="text-4xl font-bold mb-6">Welcome Back 👋</h2>
+          <p className="text-green-100 text-lg">
+            Manage your Chama, track contributions, and grow together securely.
           </p>
         </div>
 
-        {/* RIGHT FORM SECTION */}
+        {/* RIGHT FORM */}
         <div className="p-8 md:p-12 flex flex-col justify-center">
-          <div className="md:hidden flex items-center justify-center gap-2 mb-8">
+
+          <div className="md:hidden flex justify-center gap-2 mb-8">
             <img src={logo} alt="Smart Chama" className="w-10 h-10 rounded-full" />
             <span className="text-2xl font-extrabold text-green-700">
               Smart<span className="text-green-500">Chama</span>
             </span>
           </div>
 
-          <h2 className="text-3xl font-bold text-gray-900 mb-2">Login</h2>
+          <h2 className="text-3xl font-bold mb-2">Login</h2>
           <p className="text-gray-600 mb-8">Access your Chama account</p>
 
           <form className="space-y-6" onSubmit={handleLogin}>
+
+            {/* IDENTIFIER */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Email or Phone Number
+              <label className="block text-sm font-medium mb-1">
+                Email or Phone
               </label>
               <div className="relative">
                 <Mail className="absolute left-3 top-3.5 w-5 h-5 text-gray-400" />
                 <input
                   type="text"
-                  placeholder="example@email.com or 07XXXXXXXX"
+                  placeholder="email@example.com or 07XXXXXXXX"
                   value={credentials.identifier}
-                  onChange={(e) => setCredentials({ ...credentials, identifier: e.target.value })}
-                  className="w-full pl-10 pr-4 py-3 rounded-xl border border-gray-300 focus:ring-2 focus:ring-green-500 focus:border-green-500 outline-none transition"
+                  onChange={(e) =>
+                    setCredentials({ ...credentials, identifier: e.target.value })
+                  }
+                  className="w-full pl-10 py-3 rounded-xl border focus:ring-2 focus:ring-green-500"
                 />
               </div>
             </div>
 
+            {/* PASSWORD */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Password</label>
+              <label className="block text-sm font-medium mb-1">Password</label>
               <div className="relative">
                 <Lock className="absolute left-3 top-3.5 w-5 h-5 text-gray-400" />
                 <input
                   type={showPassword ? "text" : "password"}
-                  placeholder="Enter your password"
+                  placeholder="Enter password"
                   value={credentials.password}
-                  onChange={(e) => setCredentials({ ...credentials, password: e.target.value })}
-                  className="w-full pl-10 pr-12 py-3 rounded-xl border border-gray-300 focus:ring-2 focus:ring-green-500 focus:border-green-500 outline-none transition"
+                  onChange={(e) =>
+                    setCredentials({ ...credentials, password: e.target.value })
+                  }
+                  className="w-full pl-10 pr-12 py-3 rounded-xl border focus:ring-2 focus:ring-green-500"
                 />
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3 top-3.5 text-gray-500 hover:text-green-600"
+                  className="absolute right-3 top-3.5 text-gray-500"
                 >
-                  {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
+                  {showPassword ? <EyeOff /> : <Eye />}
                 </button>
               </div>
             </div>
 
-            {error && <p className="text-red-600 text-sm">{error}</p>}
-
             <div className="flex justify-end">
-              <Link to="/forgot-password" className="text-sm text-green-600 hover:underline">
+              <Link to="/forgot-password" className="text-sm text-green-600">
                 Forgot password?
               </Link>
             </div>
 
             <button
               type="submit"
-              className="w-full bg-green-600 hover:bg-green-700 text-white py-3 rounded-xl font-semibold transition-all shadow-md hover:shadow-lg"
+              disabled={loading}
+              className="w-full bg-green-600 text-white py-3 rounded-xl font-semibold hover:bg-green-700 transition"
             >
-              Login
+              {loading ? "Logging in..." : "Login"}
             </button>
           </form>
 
@@ -142,18 +186,19 @@ export default function LoginPage() {
             <div className="flex-1 h-px bg-gray-200" />
           </div>
 
-          <div className="text-center space-y-3">
+          <div className="text-center space-y-2">
             <p className="text-gray-600">Don’t have a Chama?</p>
             <div className="flex justify-center gap-4">
-              <Link to="/create" className="text-green-700 font-semibold hover:underline">
+              <Link to="/create" className="text-green-700 font-semibold">
                 Create Chama
               </Link>
-              <span className="text-gray-400">|</span>
-              <Link to="/join/:code" className="text-green-700 font-semibold hover:underline">
+              <span>|</span>
+              <Link to="/join" className="text-green-700 font-semibold">
                 Join Chama
               </Link>
             </div>
           </div>
+
         </div>
       </div>
     </main>
