@@ -1,12 +1,14 @@
-import React, { useState, useRef, useEffect } from "react";
+import React, { useState, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Upload, CheckCircle, Copy } from "lucide-react";
-
+import { CheckCircle, Copy, CircleDollarSign } from "lucide-react";
+import Confetti from "react-confetti";
+import logo from "../assets/smartchamalogo.jpeg";
 
 export default function RegisterChama() {
   const [step, setStep] = useState(1);
-  const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [copied, setCopied] = useState(false);
+  const [shake, setShake] = useState(false);
 
   const [chama, setChama] = useState({
     name: "",
@@ -15,478 +17,300 @@ export default function RegisterChama() {
     contributionFrequency: "monthly",
   });
 
-  const [meta, setMeta] = useState({
-    description: "",
-    rules: "",
-    meetingSchedule: "",
-  });
-
   const [chair, setChair] = useState({
     fullName: "",
     email: "",
     phone: "",
   });
 
-  const [profilePreview, setProfilePreview] = useState(null);
-  const profileFileRef = useRef(null);
-
-  const [security, setSecurity] = useState({
-    password: "",
-    confirmPassword: "",
-    acceptTerms: false,
-  });
-
   const [generated, setGenerated] = useState({
-    chamaCode: "",
-    inviteLink: "",
+    chamaCode: "CHAMA1234",
+    inviteLink: `${window.location.origin}/join/CHAMA1234`,
   });
 
-  // ----------------------
-  // UTILS
-  // ----------------------
-
-
-
+  const profileFileRef = useRef(null);
+  const [profilePreview, setProfilePreview] = useState(null);
 
   const copyToClipboard = async (text) => {
     try {
       await navigator.clipboard.writeText(text);
-      alert("Copied to clipboard");
+      setCopied(true);
+      setTimeout(() => setCopied(false), 1500);
     } catch {
       alert("Copy failed — select and copy manually");
     }
   };
 
-  const onProfileChange = (e) => {
-    const f = e.target.files?.[0];
-    if (!f) return;
-    if (profilePreview) URL.revokeObjectURL(profilePreview); 
-    setProfilePreview(URL.createObjectURL(f));
-  };
-
-  // ----------------------
-  // VALIDATION
-  // ----------------------
   const validateStep = () => {
     if (step === 1 && !chama.name) return "Please enter the Chama name.";
-    if (step === 2 && !meta.description) return "Please add a short description.";
-    if (step === 3 && (!chair.fullName || !chair.email))
+    if (step === 2 && (!chair.fullName || !chair.email))
       return "Please fill your personal details.";
-    if (step === 4) {
-      if (!security.password || !security.confirmPassword)
-        return "Please enter and confirm your password.";
-      if (security.password !== security.confirmPassword)
-        return "Passwords do not match.";
-      if (!security.acceptTerms) return "Please accept the terms to continue.";
-    }
     return "";
   };
 
-  // ----------------------
-  // HANDLE NEXT
-  // ----------------------
- const handleNext = async () => {
-  const validationError = validateStep();
-  if (validationError) {
-    setError(validationError);
-    return;
-  }
-
-  setError("");
-
-  if (step === 4) {
-    try {
-      setLoading(true);
-
-      const token = localStorage.getItem("access");
-      if (!token) {
-        setError("You must be logged in.");
-        return;
-      }
-
-      const res = await fetch("http://127.0.0.1:8000/api/chamas/", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify({
-          name: chama.name,
-          short_name: chama.shortName,
-          chama_type: chama.type,
-          contribution_frequency: chama.contributionFrequency,
-          description: meta.description,
-          rules: meta.rules,
-          meeting_schedule: meta.meetingSchedule,
-        }),
-      });
-
-      const data = await res.json();
-
-      if (!res.ok) {
-        throw new Error(data.detail || "Failed to create chama");
-      }
-
-      setGenerated({
-        chamaCode: data.code,
-        inviteLink: `${window.location.origin}/join/${data.invite_token}`,
-      });
-
-      setStep(5);
-    } catch (err) {
-      console.error(err);
-      setError("Failed to create Chama.");
-    } finally {
-      setLoading(false);
+  const handleNext = () => {
+    const validationError = validateStep();
+    if (validationError) {
+      setError(validationError);
+      setShake(true);
+      setTimeout(() => setShake(false), 500);
+      return;
     }
-    return;
-  }
-
-  setStep((s) => s + 1);
-};
-
-
-
-  const handleBack = () => {
-    if (step > 1) {
-      setError("");
-      setStep((s) => s - 1);
-    }
+    setError("");
+    setStep((s) => Math.min(s + 1, 4));
   };
 
-  // cleanup profile URL on unmount
-  useEffect(() => {
-    return () => {
-      if (profilePreview) URL.revokeObjectURL(profilePreview);
-    };
-  }, [profilePreview]);
+  const handleBack = () => {
+    setError("");
+    setStep((s) => Math.max(s - 1, 1));
+  };
 
-  // ----------------------
-  // RENDER
-  // ----------------------
+  const stepVariants = {
+    hidden: { opacity: 0, y: 20 },
+    enter: { opacity: 1, y: 0, scale: 1 },
+    exit: { opacity: 0, y: -20 },
+  };
+
+  const stepTitles = {
+    1: "Step 1 — Chama Details",
+    2: "Step 2 — Chairperson Details",
+    3: "Step 3 — Confirmation",
+    4: "Step 4 — Success 🎉",
+  };
+
   return (
-    <main className="min-h-screen bg-linear-to-b from-green-50 to-white py-12 px-4">
-      <div className="max-w-3xl mx-auto">
-        {/* Header + Step Indicator */}
-        <div className="mb-6">
-          <h1 className="text-3xl md:text-4xl font-extrabold text-green-700">
-            Register a Chama
-          </h1>
-          <p className="text-gray-600 mt-2">
-            Create your Chama and invite members with a friendly invite link.
-          </p>
+    <main className="min-h-screen relative bg-gradient-to-b from-green-50 to-white flex flex-col items-center justify-start px-4 py-8 overflow-hidden">
+      {/* Top Logo (Floating, optional) */}
+      <div className="absolute top-4 left-4 flex items-center gap-2">
+        <img
+          src={logo}
+          alt="SmartChama"
+          className="w-12 h-12 rounded-full shadow-md"
+        />
+        <span className="text-green-700 font-bold text-xl hidden sm:block">
+          SmartChama
+        </span>
+      </div>
 
-          <div className="mt-6">
-            <div className="flex items-center gap-3 text-sm text-gray-600">
-              <div className="flex-1">
-                <div className="h-2 bg-gray-200 rounded-full overflow-hidden">
-                  <div
-                    className="h-2 bg-green-600 rounded-full transition-all"
-                    style={{ width: `${((step - 1) / 4) * 100}%` }}
-                    aria-hidden
-                  />
-                </div>
-                <div className="flex justify-between mt-2">
-                  <span className={step >= 1 ? "text-green-700 font-medium" : "text-gray-500"}>Chama</span>
-                  <span className={step >= 2 ? "text-green-700 font-medium" : "text-gray-500"}>Description</span>
-                  <span className={step >= 3 ? "text-green-700 font-medium" : "text-gray-500"}>Chairperson</span>
-                  <span className={step >= 4 ? "text-green-700 font-medium" : "text-gray-500"}>Security</span>
-                  <span className={step === 5 ? "text-green-700 font-medium" : "text-gray-500"}>Done</span>
-                </div>
-              </div>
+      {/* Floating coins */}
+      <motion.div
+        animate={{ y: ["0%", "20%", "0%"], x: ["0%", "15%", "-10%", "0%"] }}
+        transition={{ repeat: Infinity, duration: 10, ease: "linear" }}
+        className="absolute top-10 left-5 opacity-30"
+      >
+        <CircleDollarSign className="w-12 h-12 text-yellow-400" />
+      </motion.div>
+      <motion.div
+        animate={{ y: ["0%", "25%", "-10%", "0%"], x: ["0%", "-15%", "10%", "0%"] }}
+        transition={{ repeat: Infinity, duration: 12, ease: "linear" }}
+        className="absolute bottom-20 right-10 opacity-30"
+      >
+        <CircleDollarSign className="w-16 h-16 text-green-400" />
+      </motion.div>
+
+      <div className="w-full max-w-4xl flex flex-col gap-6 z-10 mt-16">
+        {/* Step Progress */}
+        <div className="flex flex-col md:flex-row items-center justify-between mb-6 gap-2 md:gap-0">
+          {[1, 2, 3, 4].map((i) => (
+            <div key={i} className="flex-1 flex flex-col items-center relative">
+              <motion.div
+                animate={step === i ? { scale: [1, 1.3, 1] } : { scale: 1 }}
+                transition={{ duration: 0.3 }}
+                className={`w-8 h-8 rounded-full flex items-center justify-center text-white font-bold ${
+                  step >= i ? "bg-green-600" : "bg-gray-300"
+                }`}
+              >
+                {i}
+              </motion.div>
+              <div className="text-xs mt-1 text-gray-600 text-center">{stepTitles[i]}</div>
+              {i < 4 && (
+                <div
+                  className={`h-1 w-full ${
+                    step > i ? "bg-green-600" : "bg-gray-200"
+                  } mt-2 rounded-full`}
+                ></div>
+              )}
             </div>
-          </div>
+          ))}
         </div>
 
-        {/* Form Card */}
-        <div className="bg-white rounded-2xl shadow-lg border border-gray-100 p-6">
-          <AnimatePresence mode="wait">
-            {/* STEP 1 */}
+        {/* Step Card */}
+        <AnimatePresence mode="wait">
+          <motion.div
+            key={step}
+            variants={stepVariants}
+            initial="hidden"
+            animate="enter"
+            exit="exit"
+            transition={{ duration: 0.3 }}
+            className={`bg-white rounded-3xl shadow-2xl p-6 md:p-10 border border-gray-100 ${
+              shake ? "animate-shake" : ""
+            }`}
+          >
+            {/* Logo inside card */}
+            <div className="flex flex-col items-center mb-6">
+              <img src={logo} alt="SmartChama" className="w-20 h-20 rounded-full shadow-md mb-2" />
+              <h2 className="text-2xl font-bold text-green-700">{stepTitles[step]}</h2>
+            </div>
+
+            {/* Step 1: Chama Details */}
             {step === 1 && (
-              <motion.section
-                key="s1"
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -10 }}
-                transition={{ duration: 0.25 }}
-              >
-                <h2 className="text-xl font-semibold text-gray-800 mb-4">Step 1 — Chama details</h2>
-                <label className="block text-sm text-gray-600 mb-1">Chama name</label>
+              <div className="space-y-4">
                 <input
                   value={chama.name}
                   onChange={(e) => setChama({ ...chama, name: e.target.value })}
-                  placeholder="e.g. Tustahimili"
-                  className="w-full p-3 rounded-lg border border-gray-200 mb-4 focus:ring-2 focus:ring-green-500 outline-none"
+                  placeholder="Chama Name"
+                  className="w-full border rounded-xl px-4 py-3 focus:ring-2 focus:ring-green-500 outline-none hover:ring-green-400 transition"
                 />
-                <label className="block text-sm text-gray-600 mb-1">Short name (optional)</label>
                 <input
                   value={chama.shortName}
-                  onChange={(e) => setChama({ ...chama, shortName: e.target.value })}
-                  placeholder="three-letter short slug (e.g. tsm)"
-                  className="w-full p-3 rounded-lg border border-gray-200 mb-4 focus:ring-2 focus:ring-green-500 outline-none"
+                  onChange={(e) =>
+                    setChama({ ...chama, shortName: e.target.value })
+                  }
+                  placeholder="Short Name (optional)"
+                  className="w-full border rounded-xl px-4 py-3 focus:ring-2 focus:ring-green-500 outline-none hover:ring-green-400 transition"
                 />
-                <label className="block text-sm text-gray-600 mb-1">Chama type</label>
-                <select
-                  value={chama.type}
-                  onChange={(e) => setChama({ ...chama, type: e.target.value })}
-                  className="w-full p-3 rounded-lg border border-gray-200 mb-4 focus:ring-2 focus:ring-green-500 outline-none"
-                >
-                  <option value="savings">Savings</option>
-                  <option value="investment">Investment</option>
-                  <option value="rotational">Rotational</option>
-                </select>
-                <label className="block text-sm text-gray-600 mb-1">Contribution frequency</label>
-                <select
-                  value={chama.contributionFrequency}
-                  onChange={(e) => setChama({ ...chama, contributionFrequency: e.target.value })}
-                  className="w-full p-3 rounded-lg border border-gray-200 mb-4 focus:ring-2 focus:ring-green-500 outline-none"
-                >
-                  <option value="weekly">Weekly</option>
-                  <option value="monthly">Monthly</option>
-                  <option value="quarterly">Quarterly</option>
-                </select>
-              </motion.section>
-            )}
-
-            {/* STEP 2 */}
-            {step === 2 && (
-              <motion.section
-                key="s2"
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -10 }}
-                transition={{ duration: 0.25 }}
-              >
-                <h2 className="text-xl font-semibold text-gray-800 mb-4">Step 2 — Description & rules</h2>
-                <label className="block text-sm text-gray-600 mb-1">Short description</label>
-                <textarea
-                  value={meta.description}
-                  onChange={(e) => setMeta({ ...meta, description: e.target.value })}
-                  rows={4}
-                  placeholder="Describe the purpose and goals of the chama..."
-                  className="w-full p-3 rounded-lg border border-gray-200 mb-3 focus:ring-2 focus:ring-green-500 outline-none"
-                />
-                <label className="block text-sm text-gray-600 mb-1">Rules / meeting schedule (optional)</label>
-                <textarea
-                  value={meta.rules}
-                  onChange={(e) => setMeta({ ...meta, rules: e.target.value })}
-                  rows={4}
-                  placeholder="Add rules, meeting schedule, penalties, decision-making rules..."
-                  className="w-full p-3 rounded-lg border border-gray-200 mb-3 focus:ring-2 focus:ring-green-500 outline-none"
-                />
-                <label className="block text-sm text-gray-600 mb-1">Meeting schedule (optional)</label>
-                <input
-                  value={meta.meetingSchedule}
-                  onChange={(e) => setMeta({ ...meta, meetingSchedule: e.target.value })}
-                  placeholder="e.g. 1st Saturday of every month, 6PM"
-                  className="w-full p-3 rounded-lg border border-gray-200 mb-4 focus:ring-2 focus:ring-green-500 outline-none"
-                />
-              </motion.section>
-            )}
-
-            {/* STEP 3 */}
-            {step === 3 && (
-              <motion.section
-                key="s3"
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -10 }}
-                transition={{ duration: 0.25 }}
-              >
-                <h2 className="text-xl font-semibold text-gray-800 mb-4">Step 3 — Chairperson details</h2>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-sm text-gray-600 mb-1">Full name</label>
-                    <input
-                      value={chair.fullName}
-                      onChange={(e) => setChair({ ...chair, fullName: e.target.value })}
-                      placeholder="Your full name"
-                      className="w-full p-3 rounded-lg border border-gray-200 focus:ring-2 focus:ring-green-500 outline-none"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm text-gray-600 mb-1">Email</label>
-                    <input
-                      value={chair.email}
-                      onChange={(e) => setChair({ ...chair, email: e.target.value })}
-                      placeholder="you@domain.com"
-                      className="w-full p-3 rounded-lg border border-gray-200 focus:ring-2 focus:ring-green-500 outline-none"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm text-gray-600 mb-1">Phone</label>
-                    <input
-                      value={chair.phone}
-                      onChange={(e) => setChair({ ...chair, phone: e.target.value })}
-                      placeholder="+254..."
-                      className="w-full p-3 rounded-lg border border-gray-200 focus:ring-2 focus:ring-green-500 outline-none"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm text-gray-600 mb-1">National ID (optional)</label>
-                    <input
-                      placeholder="ID/passport"
-                      className="w-full p-3 rounded-lg border border-gray-200 focus:ring-2 focus:ring-green-500 outline-none"
-                    />
-                  </div>
-                </div>
-
-                <div className="mt-4">
-                  <label className="block text-sm text-gray-600 mb-1">Profile picture</label>
-                  <div className="flex items-center gap-3">
-                    <input
-                      type="file"
-                      accept="image/*"
-                      onChange={onProfileChange}
-                      ref={profileFileRef}
-                      className="p-2 border border-gray-200 rounded-lg"
-                    />
-                    <Upload className="text-green-600" />
-                    {profilePreview && (
-                      <img
-                        src={profilePreview}
-                        alt="preview"
-                        className="w-14 h-14 rounded-full object-cover border"
-                      />
-                    )}
-                  </div>
-                </div>
-              </motion.section>
-            )}
-
-            {/* STEP 4 */}
-            {step === 4 && (
-              <motion.section
-                key="s4"
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -10 }}
-                transition={{ duration: 0.25 }}
-              >
-                <h2 className="text-xl font-semibold text-gray-800 mb-4">Step 4 — Security</h2>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-sm text-gray-600 mb-1">Create password</label>
-                    <input
-                      type="password"
-                      value={security.password}
-                      onChange={(e) => setSecurity({ ...security, password: e.target.value })}
-                      placeholder="Strong password"
-                      className="w-full p-3 rounded-lg border border-gray-200 focus:ring-2 focus:ring-green-500 outline-none"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm text-gray-600 mb-1">Confirm password</label>
-                    <input
-                      type="password"
-                      value={security.confirmPassword}
-                      onChange={(e) =>
-                        setSecurity({ ...security, confirmPassword: e.target.value })
-                      }
-                      placeholder="Repeat password"
-                      className="w-full p-3 rounded-lg border border-gray-200 focus:ring-2 focus:ring-green-500 outline-none"
-                    />
-                  </div>
-                </div>
-                <div className="mt-4">
-                  <label className="flex items-center gap-3">
-                    <input
-                      type="checkbox"
-                      checked={security.acceptTerms}
-                      onChange={(e) =>
-                        setSecurity({ ...security, acceptTerms: e.target.checked })
-                      }
-                    />
-                    <span className="text-sm text-gray-600">
-                      I agree to the Chama terms & privacy policy
-                    </span>
-                  </label>
-                </div>
-              </motion.section>
-            )}
-
-            {/* STEP 5 */}
-            {step === 5 && (
-              <motion.section
-                key="s5"
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -10 }}
-                transition={{ duration: 0.25 }}
-                className="text-center"
-              >
-                <div className="inline-block bg-green-50 p-4 rounded-full mb-4">
-                  <CheckCircle className="w-10 h-10 text-green-600" />
-                </div>
-                <h2 className="text-2xl font-bold text-green-700 mb-2">Chama Created</h2>
-                <p className="text-gray-600 mb-4">
-                  Your invite link is ready — share it with members to let them join.
-                </p>
-                <div className="bg-white border border-green-100 rounded-lg p-4 mb-4">
-                  <p className="text-sm text-gray-500">Chama code</p>
-                  <div className="font-mono font-semibold text-lg">{generated.chamaCode}</div>
-                  <p className="text-sm text-gray-500 mt-3">Invite link</p>
-                  <div className="flex gap-2 items-center mt-2">
-                    <div className="wrap-break-words">{generated.inviteLink}</div>
-                    <button
-                      onClick={() => copyToClipboard(generated.inviteLink)}
-                      className="ml-auto p-2 rounded-md bg-gray-50 border hover:bg-gray-100"
-                    >
-                      <Copy className="w-4 h-4" />
-                    </button>
-                  </div>
-                </div>
-
-                <div className="flex gap-3 justify-center">
-                  <a href="/dashboard/chairperson" className="px-6 py-2 rounded-lg bg-green-600 text-white">
-                    Go to Dashboard
-                  </a>
-                  <button
-                    onClick={() => {
-                      if (profilePreview) URL.revokeObjectURL(profilePreview);
-                      setStep(1);
-                      setChama({ name: "", shortName: "", type: "savings", contributionFrequency: "monthly" });
-                      setMeta({ description: "", rules: "", meetingSchedule: "" });
-                      setChair({ fullName: "", email: "", phone: "" });
-                      setProfilePreview(null);
-                      setSecurity({ password: "", confirmPassword: "", acceptTerms: false });
-                      setGenerated({ chamaCode: "", inviteLink: "" });
-                    }}
-                    className="px-6 py-2 rounded-lg border"
+                <div className="flex flex-col md:flex-row gap-4">
+                  <select
+                    value={chama.type}
+                    onChange={(e) => setChama({ ...chama, type: e.target.value })}
+                    className="w-full md:w-1/2 p-4 border rounded-xl focus:ring-2 focus:ring-green-500 outline-none hover:ring-green-400 transition"
                   >
-                    Register another Chama
+                    <option value="savings">Savings</option>
+                    <option value="investment">Investment</option>
+                    <option value="rotational">Rotational</option>
+                  </select>
+                  <select
+                    value={chama.contributionFrequency}
+                    onChange={(e) =>
+                      setChama({ ...chama, contributionFrequency: e.target.value })
+                    }
+                    className="w-full md:w-1/2 p-4 border rounded-xl focus:ring-2 focus:ring-green-500 outline-none hover:ring-green-400 transition"
+                  >
+                    <option value="weekly">Weekly</option>
+                    <option value="monthly">Monthly</option>
+                    <option value="quarterly">Quarterly</option>
+                  </select>
+                </div>
+              </div>
+            )}
+
+            {/* Step 2: Chair Details */}
+            {step === 2 && (
+              <div className="space-y-4">
+                <input
+                  value={chair.fullName}
+                  onChange={(e) => setChair({ ...chair, fullName: e.target.value })}
+                  placeholder="Full Name"
+                  className="w-full border rounded-xl px-4 py-3 focus:ring-2 focus:ring-green-500 outline-none hover:ring-green-400 transition"
+                />
+                <input
+                  value={chair.email}
+                  onChange={(e) => setChair({ ...chair, email: e.target.value })}
+                  placeholder="Email"
+                  className="w-full border rounded-xl px-4 py-3 focus:ring-2 focus:ring-green-500 outline-none hover:ring-green-400 transition"
+                />
+                <input
+                  value={chair.phone}
+                  onChange={(e) => setChair({ ...chair, phone: e.target.value })}
+                  placeholder="Phone"
+                  className="w-full border rounded-xl px-4 py-3 focus:ring-2 focus:ring-green-500 outline-none hover:ring-green-400 transition"
+                />
+                <div className="flex items-center gap-4">
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={(e) => {
+                      const f = e.target.files?.[0];
+                      if (!f) return;
+                      if (profilePreview) URL.revokeObjectURL(profilePreview);
+                      setProfilePreview(URL.createObjectURL(f));
+                    }}
+                    ref={profileFileRef}
+                    className="p-2 border rounded-xl"
+                  />
+                  {profilePreview && (
+                    <img
+                      src={profilePreview}
+                      alt="preview"
+                      className="w-16 h-16 rounded-full object-cover border"
+                    />
+                  )}
+                </div>
+              </div>
+            )}
+
+            {/* Step 3: Confirmation */}
+            {step === 3 && (
+              <div className="text-center space-y-4">
+                <CheckCircle className="mx-auto text-green-700 w-12 h-12" />
+                <h3 className="text-lg font-semibold">All Set! 🎉</h3>
+                <p className="text-gray-600">Share this invite link with members:</p>
+                <div className="bg-gray-50 border rounded-lg p-4 flex items-center justify-between">
+                  <span className="break-all">{generated.inviteLink}</span>
+                  <button
+                    onClick={() => copyToClipboard(generated.inviteLink)}
+                    className="px-3 py-1 rounded-lg bg-green-600 text-white hover:bg-green-700 transition"
+                  >
+                    {copied ? "Copied!" : <Copy className="w-4 h-4" />}
                   </button>
                 </div>
-              </motion.section>
+              </div>
             )}
-          </AnimatePresence>
-        </div>
 
-        {/* Bottom toolbar */}
-        {step !== 5 && (
-          <div className="max-w-3xl mx-auto mt-6 flex justify-between items-center px-2">
-            <button
-              onClick={handleBack}
-              disabled={step === 1 || loading}
-              className={`px-4 py-2 rounded-lg ${
-                step === 1 || loading ? "text-gray-400" : "text-gray-700 hover:bg-gray-50"
-              }`}
-            >
-              ← Back
-            </button>
+            {/* Step 4: Success */}
+            {step === 4 && (
+              <div className="text-center space-y-6">
+                <Confetti width={window.innerWidth} height={window.innerHeight} />
+                <CheckCircle className="mx-auto text-green-700 w-16 h-16" />
+                <h3 className="text-2xl font-bold text-green-700">Chama Created!</h3>
+                <p className="text-gray-600">Your members can now join using the link above.</p>
+                <button
+                  onClick={() => (window.location.href = "/auth/login")}
+                  className="mt-4 px-8 py-3 rounded-full bg-green-600 text-white font-semibold hover:bg-green-700 transition transform hover:scale-105"
+                >
+                  🚀 Take Me to Login
+                </button>
+              </div>
+            )}
 
-            <div className="text-sm text-red-600">{error}</div>
+            {error && <div className="text-red-600 mt-4 text-center">{error}</div>}
 
-            <button
-              onClick={handleNext}
-              disabled={loading}
-              className="px-4 py-2 rounded-lg bg-green-600 text-white"
-            >
-              {step === 4 ? (loading ? "Creating..." : "Create Chama") : "Next →"}
-            </button>
-          </div>
-        )}
+            {/* Controls */}
+            {step < 4 && (
+              <div className="flex flex-col md:flex-row justify-between mt-6 gap-4 md:gap-0">
+                <button
+                  onClick={handleBack}
+                  disabled={step === 1}
+                  className="px-6 py-3 rounded-xl bg-gray-100 hover:bg-gray-200 transition"
+                >
+                  ← Back
+                </button>
+                <button
+                  onClick={handleNext}
+                  className="px-6 py-3 rounded-xl bg-green-600 text-white hover:bg-green-700 transition"
+                >
+                  {step === 3 ? "Finish" : "Next →"}
+                </button>
+              </div>
+            )}
+          </motion.div>
+        </AnimatePresence>
       </div>
+
+      {/* Shake animation */}
+      <style>{`
+        @keyframes shake {
+          0% { transform: translateX(0); }
+          25% { transform: translateX(-5px); }
+          50% { transform: translateX(5px); }
+          75% { transform: translateX(-5px); }
+          100% { transform: translateX(0); }
+        }
+        .animate-shake {
+          animation: shake 0.5s;
+        }
+      `}</style>
     </main>
   );
 }

@@ -1,153 +1,141 @@
 import { useState } from "react";
-import { Link } from "react-router-dom";
+import { NavLink, Link } from "react-router-dom";
+import { motion, AnimatePresence } from "framer-motion";
 import logo from "../../assets/smartchamalogo.jpeg";
 
-export default function Navbar() {
-  const [isOpen, setIsOpen] = useState(false);
+const Navbar = () => {
+  const [open, setOpen] = useState(false);
+
+  const navLinkClass = ({ isActive }) =>
+    `relative px-1 py-1 transition ${
+      isActive
+        ? "text-green-600 font-semibold"
+        : "text-gray-600 hover:text-green-600"
+    }`;
 
   return (
-    <header className="fixed top-0 left-0 w-full z-50 bg-white/80 backdrop-blur-md shadow-sm border-b border-green-100">
-      <nav className="max-w-7xl mx-auto flex items-center justify-between px-6 py-3">
-        {/* Logo + Brand */}
-        <Link to="/" className="flex items-center gap-2 group">
-          <img
-            src={logo}
-            alt="Smart Chama"
-            className="w-10 h-10 rounded-full object-contain border-2 border-green-500 group-hover:scale-105 transition-transform duration-300"
-          />
-          <span className="text-2xl font-extrabold text-green-700 tracking-tight">
-            Smart<span className="text-green-500">Chama</span>
+    <header className="sticky top-0 z-50 backdrop-blur-xl bg-white/60 border-b border-gray-200 shadow-sm">
+      <div className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
+
+        {/* Logo */}
+        <Link to="/" className="flex items-center gap-3 group">
+          <div className="relative">
+            <img
+              src={logo}
+              alt="SmartChama"
+              className="w-10 h-10 rounded-xl object-cover"
+            />
+            <div className="absolute inset-0 rounded-xl bg-green-500/20 blur-md opacity-0 group-hover:opacity-100 transition"></div>
+          </div>
+
+          <span className="text-xl font-semibold text-gray-900 tracking-tight">
+            SmartChama
           </span>
         </Link>
 
-        {/* Desktop Menu */}
-        <ul className="hidden md:flex items-center gap-8 font-medium">
-          <li>
-            <Link
-              to="/"
-              className="text-gray-700 hover:text-green-600 transition-colors duration-300"
-            >
-              Home
-            </Link>
-          </li>
-          <li>
-            <Link
-              to="/about"
-              className="text-gray-700 hover:text-green-600 transition-colors duration-300"
-            >
-              About
-            </Link>
-          </li>
-          <li>
-            <Link
-              to="/contact"
-              className="text-gray-700 hover:text-green-600 transition-colors duration-300"
-            >
-              Contact
-            </Link>
-          </li>
+        {/* Desktop Nav */}
+        <nav className="hidden md:flex items-center gap-8">
+          {["/", "/features", "/subscription"].map((path, i) => {
+            const label = ["Home", "Features", "Pricing"][i];
+            return (
+              <NavLink key={path} to={path} className={navLinkClass}>
+                {({ isActive }) => (
+                  <>
+                    {label}
+                    {isActive && (
+                      <motion.div
+                        layoutId="underline"
+                        className="absolute left-0 -bottom-1 w-full h-0.5 bg-green-600 rounded"
+                      />
+                    )}
+                  </>
+                )}
+              </NavLink>
+            );
+          })}
+        </nav>
 
-          {/* Action Buttons */}
-          <li>
-            <Link
-              to="/create"
-              className="border border-green-600 text-green-700 px-5 py-2.5 rounded-full font-semibold hover:bg-green-600 hover:text-white transition-all duration-300"
-            >
-              Create Chama
-            </Link>
-          </li>
-          <li>
-            <Link
-              to="/login"
-              className="bg-green-600 text-white px-5 py-2.5 rounded-full font-semibold hover:bg-green-700 hover:shadow-lg transition-all duration-300"
-            >
-              Login
-            </Link>
-          </li>
-        </ul>
+        {/* Right Section */}
+        <div className="hidden md:flex items-center gap-4">
+          <Link
+            to="/login"
+            className="text-gray-600 hover:text-gray-900 transition"
+          >
+            Login
+          </Link>
+
+          <Link
+            to="/create"
+            className="relative px-5 py-2 rounded-xl text-white bg-linear-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 transition shadow-lg overflow-hidden"
+          >
+            <span className="relative z-10">Create Chama</span>
+            <span className="absolute inset-0 bg-white opacity-0 hover:opacity-10 transition"></span>
+          </Link>
+        </div>
 
         {/* Mobile Button */}
         <button
-          className="md:hidden text-green-700 focus:outline-none"
-          onClick={() => setIsOpen(!isOpen)}
+          className="md:hidden text-gray-700 text-2xl"
+          onClick={() => setOpen(!open)}
         >
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            fill="none"
-            viewBox="0 0 24 24"
-            strokeWidth={2}
-            stroke="currentColor"
-            className="w-7 h-7"
-          >
-            {isOpen ? (
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                d="M6 18L18 6M6 6l12 12"
-              />
-            ) : (
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                d="M4 6h16M4 12h16M4 18h16"
-              />
-            )}
-          </svg>
+          {open ? "✕" : "☰"}
         </button>
-      </nav>
+      </div>
 
-      {/* Mobile Drawer */}
-      {isOpen && (
-        <div className="md:hidden bg-white border-t border-green-100 shadow-lg">
-          <ul className="flex flex-col items-center py-4 space-y-3 text-lg font-medium">
-            <li>
-              <Link
-                to="/"
-                className="text-gray-700 hover:text-green-600 transition-colors duration-300"
-                onClick={() => setIsOpen(false)}
-              >
-                Home
-              </Link>
-            </li>
-            <li>
-              <Link
-                to="/about"
-                className="text-gray-700 hover:text-green-600 transition-colors duration-300"
-                onClick={() => setIsOpen(false)}
-              >
-                About
-              </Link>
-            </li>
-            <li>
-              <Link
-                to="/contact"
-                className="text-gray-700 hover:text-green-600 transition-colors duration-300"
-                onClick={() => setIsOpen(false)}
-              >
-                Contact
-              </Link>
-            </li>
-            <li>
-              <Link
-                to="/register"
-                className="border border-green-600 text-green-700 px-5 py-2 rounded-full hover:bg-green-600 hover:text-white transition-all duration-300"
-                onClick={() => setIsOpen(false)}
-              >
-                Create Chama
-              </Link>
-            </li>
-            <li>
-              <Link
-                to="/login"
-                className="bg-green-600 text-white px-5 py-2 rounded-full hover:bg-green-700 hover:shadow-md transition-all duration-300"
-                onClick={() => setIsOpen(false)}
-              >
-                Login
-              </Link>
-            </li>
-          </ul>
-        </div>
-      )}
+      {/* Mobile Menu */}
+      <AnimatePresence>
+        {open && (
+          <motion.div
+            initial={{ opacity: 0, y: -20 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -20 }}
+            transition={{ duration: 0.3 }}
+            className="md:hidden px-6 pb-6 bg-white/90 backdrop-blur-xl border-t border-gray-200 space-y-4"
+          >
+            <NavLink
+              onClick={() => setOpen(false)}
+              to="/"
+              className="block text-gray-700 hover:text-green-600"
+            >
+              Home
+            </NavLink>
+
+            <NavLink
+              onClick={() => setOpen(false)}
+              to="/features"
+              className="block text-gray-700 hover:text-green-600"
+            >
+              Features
+            </NavLink>
+
+            <NavLink
+              onClick={() => setOpen(false)}
+              to="/subscription"
+              className="block text-gray-700 hover:text-green-600"
+            >
+              Pricing
+            </NavLink>
+
+            <Link
+              onClick={() => setOpen(false)}
+              to="/auth/login"
+              className="block text-gray-600"
+            >
+              Login
+            </Link>
+
+            <Link
+              onClick={() => setOpen(false)}
+              to="/auth/register"
+              className="block bg-linear-to-r from-green-500 to-emerald-600 text-white px-4 py-2 rounded-lg text-center shadow"
+            >
+              Create Chama
+            </Link>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </header>
   );
-}
+};
+
+export default Navbar;

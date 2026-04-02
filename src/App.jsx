@@ -5,8 +5,8 @@ import PublicLayout from "./Layout/PublicLayout";
 import DashboardLayout from "./Layout/DashboardLayout";
 
 import LandingPage from "./Pages/Landing";
-import AboutPage from "./Pages/about";
-import ContactPage from "./Pages/contact";
+import Features from "./Pages/feature";
+import Pricing from "./Pages/pricing";
 import RegisterChama from "./Pages/register";
 import JoinChama from "./Pages/JoinChama";
 import LoginPage from "./Pages/Login";
@@ -25,8 +25,9 @@ export default function App() {
         {/* 🌍 Public Pages */}
         <Route element={<PublicLayout />}>
           <Route path="/" element={<LandingPage />} />
-          <Route path="/about" element={<AboutPage />} />
-          <Route path="/contact" element={<ContactPage />} />
+          <Route path="/features" element={<Features />} />
+
+          <Route path="/subscription" element={<Pricing />} />
           <Route path="/create" element={<RegisterChama />} />
           <Route path="/join/:code" element={<JoinChama />} />
           <Route path="/login" element={<LoginPage />} />
