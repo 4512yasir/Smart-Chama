@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { Eye, EyeOff, Lock, Mail } from "lucide-react";
+import { Eye, EyeOff } from "lucide-react";
 import { motion } from "framer-motion";
 import toast from "react-hot-toast";
 import logo from "../assets/smartchamalogo.jpeg";
@@ -13,39 +13,56 @@ export default function LoginPage() {
 
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [focus, setFocus] = useState("");
 
+  const [errors, setErrors] = useState({});
   const [credentials, setCredentials] = useState({
     identifier: "",
     password: "",
+    remember: false,
   });
+
+  const validate = () => {
+    const err = {};
+    if (!credentials.identifier) err.identifier = "Required";
+    if (!credentials.password) err.password = "Required";
+    return err;
+  };
 
   const handleLogin = async (e) => {
     e.preventDefault();
 
-    if (!credentials.identifier || !credentials.password) {
-      toast.error("All fields are required");
+    const validation = validate();
+    if (Object.keys(validation).length > 0) {
+      setErrors(validation);
       return;
     }
 
     try {
       setLoading(true);
+      setErrors({});
 
       const loginRes = await fetch(LOGIN_URL, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(credentials),
+        body: JSON.stringify({
+          identifier: credentials.identifier,
+          password: credentials.password,
+        }),
       });
 
       const loginData = await loginRes.json();
 
       if (!loginRes.ok) {
-        toast.error("Invalid credentials");
+        setErrors({ general: "Invalid email/phone or password" });
         return;
       }
 
       localStorage.setItem("access", loginData.access);
       localStorage.setItem("refresh", loginData.refresh);
+
+      if (credentials.remember) {
+        localStorage.setItem("rememberUser", "true");
+      }
 
       const meRes = await fetch(ME_URL, {
         headers: {
@@ -56,13 +73,13 @@ export default function LoginPage() {
       const user = await meRes.json();
 
       if (!meRes.ok) {
-        toast.error("Failed to fetch user");
+        setErrors({ general: "Failed to fetch user" });
         return;
       }
 
       localStorage.setItem("user", JSON.stringify(user));
 
-      toast.success("Welcome back 🎉");
+      toast.success("Welcome back 👋");
 
       if (user.role === "chairperson") {
         navigate("/dashboard/chairperson");
@@ -70,122 +87,123 @@ export default function LoginPage() {
         navigate("/dashboard/member");
       }
     } catch (err) {
-      toast.error("Server error");
+      setErrors({ general: "Server error. Try again." });
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <main className="min-h-screen flex items-center justify-center px-4 bg-gradient-to-br from-green-50 via-white to-green-100 relative overflow-hidden">
-
-      {/* Floating background glow */}
-      <div className="absolute w-72 h-72 bg-green-300/30 blur-3xl rounded-full top-10 left-10"></div>
-      <div className="absolute w-72 h-72 bg-green-200/30 blur-3xl rounded-full bottom-10 right-10"></div>
+    <main className="min-h-screen flex items-center justify-center bg-gray-50 px-4">
 
       <motion.div
-        initial={{ opacity: 0, scale: 0.95 }}
-        animate={{ opacity: 1, scale: 1 }}
-        className="w-full max-w-5xl grid md:grid-cols-2 bg-white/80 backdrop-blur-xl rounded-3xl shadow-2xl overflow-hidden border border-white/40"
+        initial={{ opacity: 0, y: 10 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="w-full max-w-md"
       >
 
-        {/* LEFT PANEL */}
-        <div className="hidden md:flex flex-col justify-center bg-gradient-to-br from-green-600 to-green-700 text-white p-12 relative">
-
-          <div className="flex items-center gap-3 mb-10">
-            <img src={logo} className="w-14 h-14 rounded-full border-2 border-white shadow" />
-            <h1 className="text-3xl font-extrabold">
-              Smart<span className="text-green-200">Chama</span>
-            </h1>
-          </div>
-
-          <h2 className="text-4xl font-bold mb-4">Welcome Back 👋</h2>
-          <p className="text-green-100 text-lg">
-            Track contributions, manage members, and grow your Chama.
+        {/* LOGO + HEADER */}
+        <div className="flex flex-col items-center mb-8">
+          <img src={logo} className="w-14 h-14 rounded-full shadow-sm" />
+          <h1 className="text-2xl font-semibold mt-4 text-gray-900">
+            Welcome back
+          </h1>
+          <p className="text-gray-500 text-sm">
+            Login to your SmartChama account
           </p>
-
-          {/* subtle floating animation */}
-          <motion.div
-            animate={{ y: [0, 10, 0] }}
-            transition={{ repeat: Infinity, duration: 4 }}
-            className="absolute bottom-10 right-10 text-green-200 text-sm"
-          >
-            🇰🇪 Built for Kenyan Chamas
-          </motion.div>
         </div>
 
-        {/* RIGHT PANEL */}
-        <div className="p-8 md:p-12 flex flex-col justify-center">
+        {/* CARD */}
+        <div className="bg-white border border-gray-200 rounded-2xl p-6 shadow-sm">
 
-          {/* Mobile Logo */}
-          <div className="md:hidden flex justify-center items-center gap-2 mb-6">
-            <img src={logo} className="w-10 h-10 rounded-full" />
-            <span className="text-2xl font-bold text-green-700">SmartChama</span>
-          </div>
+          {/* ERROR */}
+          {errors.general && (
+            <div className="mb-4 text-sm text-red-600 bg-red-50 border border-red-100 p-3 rounded-lg">
+              {errors.general}
+            </div>
+          )}
 
-          <h2 className="text-3xl font-bold mb-2">Login</h2>
-          <p className="text-gray-600 mb-8">
-            Access your Chama account
-          </p>
+          <form onSubmit={handleLogin} className="space-y-5">
 
-          <form onSubmit={handleLogin} className="space-y-6">
-
-            {/* EMAIL / PHONE */}
+            {/* IDENTIFIER */}
             <div>
-              <label className="text-sm font-medium">Email or Phone</label>
-              <div className={`relative mt-1`}>
-                <Mail className="absolute left-3 top-3.5 text-gray-400" />
-                <input
-                  type="text"
-                  placeholder="email@example.com or 07XXXXXXXX"
-                  value={credentials.identifier}
-                  onFocus={() => setFocus("id")}
-                  onBlur={() => setFocus("")}
-                  onChange={(e) =>
-                    setCredentials({ ...credentials, identifier: e.target.value })
+              <label className="text-sm text-gray-600">Email or Phone</label>
+              <input
+                type="text"
+                value={credentials.identifier}
+                onChange={(e) =>
+                  setCredentials({ ...credentials, identifier: e.target.value })
+                }
+                className={`mt-1 w-full px-4 py-3 rounded-xl border outline-none transition
+                  ${errors.identifier
+                    ? "border-red-400 ring-1 ring-red-200"
+                    : "border-gray-300 focus:ring-2 focus:ring-green-500"
                   }
-                  className={`w-full pl-10 py-3 rounded-xl border outline-none transition
-                    ${focus === "id" ? "ring-2 ring-green-500 border-green-500" : ""}
-                  `}
-                />
-              </div>
-              <p className="text-xs text-gray-400 mt-1">
-                Use your email or Kenyan phone number
-              </p>
+                `}
+                placeholder="you@example.com or 07XXXXXXXX"
+              />
+              {errors.identifier && (
+                <p className="text-xs text-red-500 mt-1">
+                  {errors.identifier}
+                </p>
+              )}
             </div>
 
             {/* PASSWORD */}
             <div>
-              <label className="text-sm font-medium">Password</label>
+              <label className="text-sm text-gray-600">Password</label>
               <div className="relative mt-1">
-                <Lock className="absolute left-3 top-3.5 text-gray-400" />
                 <input
                   type={showPassword ? "text" : "password"}
-                  placeholder="Enter password"
                   value={credentials.password}
-                  onFocus={() => setFocus("pw")}
-                  onBlur={() => setFocus("")}
                   onChange={(e) =>
                     setCredentials({ ...credentials, password: e.target.value })
                   }
-                  className={`w-full pl-10 pr-12 py-3 rounded-xl border outline-none transition
-                    ${focus === "pw" ? "ring-2 ring-green-500 border-green-500" : ""}
+                  className={`w-full px-4 py-3 pr-12 rounded-xl border outline-none transition
+                    ${errors.password
+                      ? "border-red-400 ring-1 ring-red-200"
+                      : "border-gray-300 focus:ring-2 focus:ring-green-500"
+                    }
                   `}
+                  placeholder="Enter password"
                 />
 
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3 top-3.5 text-gray-500 hover:scale-110 transition"
+                  className="absolute right-3 top-3 text-gray-400 hover:text-gray-600"
                 >
-                  {showPassword ? <EyeOff /> : <Eye />}
+                  {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
                 </button>
               </div>
+
+              {errors.password && (
+                <p className="text-xs text-red-500 mt-1">
+                  {errors.password}
+                </p>
+              )}
             </div>
 
-            {/* FORGOT */}
-            <div className="flex justify-end">
-              <Link to="/forgot-password" className="text-sm text-green-600 hover:underline">
+            {/* REMEMBER + FORGOT */}
+            <div className="flex items-center justify-between text-sm">
+              <label className="flex items-center gap-2 text-gray-600">
+                <input
+                  type="checkbox"
+                  checked={credentials.remember}
+                  onChange={(e) =>
+                    setCredentials({
+                      ...credentials,
+                      remember: e.target.checked,
+                    })
+                  }
+                />
+                Remember me
+              </label>
+
+              <Link
+                to="/forgot-password"
+                className="text-green-600 hover:underline"
+              >
                 Forgot password?
               </Link>
             </div>
@@ -194,34 +212,28 @@ export default function LoginPage() {
             <motion.button
               whileTap={{ scale: 0.97 }}
               disabled={loading}
-              className="w-full bg-green-600 text-white py-3 rounded-xl font-semibold hover:bg-green-700 transition"
+              className="w-full py-3 rounded-xl bg-green-600 text-white font-medium hover:bg-green-700 transition flex items-center justify-center gap-2"
             >
+              {loading && (
+                <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></span>
+              )}
               {loading ? "Logging in..." : "Login"}
             </motion.button>
           </form>
-
-          {/* DIVIDER */}
-          <div className="my-8 flex items-center gap-4">
-            <div className="flex-1 h-px bg-gray-200" />
-            <span className="text-gray-400 text-sm">OR</span>
-            <div className="flex-1 h-px bg-gray-200" />
-          </div>
-
-          {/* ACTIONS */}
-          <div className="text-center space-y-2">
-            <p className="text-gray-600">New here?</p>
-            <div className="flex justify-center gap-4 text-sm">
-              <Link to="/create" className="text-green-700 font-semibold hover:underline">
-                Create Chama
-              </Link>
-              <span>|</span>
-              <Link to="/join" className="text-green-700 font-semibold hover:underline">
-                Join Chama
-              </Link>
-            </div>
-          </div>
-
         </div>
+
+        {/* FOOTER */}
+        <div className="text-center mt-6 text-sm text-gray-600">
+          Don’t have a Chama?{" "}
+          <Link to="/create" className="text-green-600 font-medium hover:underline">
+            Create one
+          </Link>{" "}
+          or{" "}
+          <Link to="/join" className="text-green-600 font-medium hover:underline">
+            Join one
+          </Link>
+        </div>
+
       </motion.div>
     </main>
   );

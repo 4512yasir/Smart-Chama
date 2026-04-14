@@ -1,326 +1,221 @@
-import React, { useState, useRef, useEffect } from "react";
-import { useParams } from "react-router-dom";
-import { AnimatePresence, motion } from "framer-motion";
-import { CheckCircle } from "lucide-react";
-import Confetti from "react-confetti";
+import { useParams, Link, useNavigate } from "react-router-dom";
+import { useState, useEffect } from "react";
+import { motion } from "framer-motion";
+import toast from "react-hot-toast";
 import logo from "../assets/smartchamalogo.jpeg";
 
 export default function JoinChama() {
-  const { code } = useParams(); // 🔗 invite code from URL
+  const { code } = useParams();
+  const navigate = useNavigate();
 
-  const [step, setStep] = useState(1);
+  const [inviteCode, setInviteCode] = useState("");
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState("");
-  const [showConfetti, setShowConfetti] = useState(false);
+  const [loadingChama, setLoadingChama] = useState(true);
 
-  const [personal, setPersonal] = useState({
-    fullName: "",
+  const [form, setForm] = useState({
+    name: "",
     email: "",
     phone: "",
-  });
-
-  const [about, setAbout] = useState({
-    occupation: "",
-    description: "",
-  });
-
-  const [security, setSecurity] = useState({
     password: "",
     confirmPassword: "",
-    acceptTerms: false,
   });
 
-  const [profilePreview, setProfilePreview] = useState(null);
-  const profileFileRef = useRef(null);
+  const [chama, setChama] = useState(null);
 
-  // 👥 fake chama data (simulate backend)
-  const chamaData = {
-    name: "Umoja Savings Group",
-    members: 12,
-  };
+  // 🔥 Load Chama Preview (Mock)
+  useEffect(() => {
+    if (code) {
+      setInviteCode(code.toUpperCase());
 
-  // 🔐 Password strength
-  const getPasswordStrength = (pwd) => {
-    if (!pwd) return "";
-    if (pwd.length < 6) return "Weak";
-    if (pwd.match(/[A-Z]/) && pwd.match(/[0-9]/)) return "Strong";
-    return "Medium";
-  };
-
-  const passwordStrength = getPasswordStrength(security.password);
-
-  const onProfileChange = (e) => {
-    const f = e.target.files?.[0];
-    if (!f) return;
-    if (profilePreview) URL.revokeObjectURL(profilePreview);
-    setProfilePreview(URL.createObjectURL(f));
-  };
-
-  const validateStep = () => {
-    if (step === 1 && (!personal.fullName || !personal.email))
-      return "Fill your personal info.";
-    if (step === 2 && !about.description)
-      return "Tell us about yourself.";
-    if (step === 3) {
-      if (!security.password || !security.confirmPassword)
-        return "Enter password.";
-      if (security.password !== security.confirmPassword)
-        return "Passwords do not match.";
-      if (!security.acceptTerms)
-        return "Accept terms.";
+      setTimeout(() => {
+        setChama({
+          name: "Umoja Savings Group",
+          members: 12,
+          type: "Monthly Contributions",
+          schedule: "Every 1st Saturday",
+          contribution: "KES 5,000",
+          description:
+            "A trusted Nairobi-based chama focused on savings and small investments.",
+        });
+        setLoadingChama(false);
+      }, 800);
     }
+  }, [code]);
+
+  const handleChange = (field, value) => {
+    setForm({ ...form, [field]: value });
+  };
+
+  // ✅ Validation
+  const validate = () => {
+    if (!form.name || !form.email || !form.phone) {
+      return "All fields are required";
+    }
+
+    if (!form.password || !form.confirmPassword) {
+      return "Enter password";
+    }
+
+    if (form.password !== form.confirmPassword) {
+      return "Passwords do not match";
+    }
+
     return "";
   };
 
-  const handleNext = () => {
-    const err = validateStep();
-    if (err) return setError(err);
+  // 🚀 JOIN + AUTO LOGIN
+  const handleJoin = (e) => {
+    e.preventDefault();
 
-    setError("");
-
-    if (step === 3) {
-      setLoading(true);
-      setTimeout(() => {
-        setLoading(false);
-        setStep(4);
-        setShowConfetti(true);
-      }, 800);
+    const error = validate();
+    if (error) {
+      toast.error(error);
       return;
     }
 
-    setStep((s) => s + 1);
-  };
+    setLoading(true);
 
-  const handleBack = () => {
-    if (step > 1) {
-      setError("");
-      setStep((s) => s - 1);
-    }
-  };
+    setTimeout(() => {
+      setLoading(false);
 
-  useEffect(() => {
-    return () => {
-      if (profilePreview) URL.revokeObjectURL(profilePreview);
-    };
-  }, [profilePreview]);
+      // 🔐 Mock user (simulate backend response)
+      const user = {
+        name: form.name,
+        email: form.email,
+        phone: form.phone,
+        role: "member",
+        chama: chama.name,
+      };
+
+      // Save auth
+      localStorage.setItem("user", JSON.stringify(user));
+      localStorage.setItem("access", "mock_access_token");
+
+      toast.success("Welcome to the Chama 🎉");
+
+      // Redirect to dashboard
+      navigate("/dashboard/member");
+
+    }, 900);
+  };
 
   return (
-    <main className="min-h-screen bg-gradient-to-b from-green-50 to-white px-4 py-10">
-      {showConfetti && <Confetti />}
+    <main className="min-h-screen bg-gradient-to-br from-green-50 via-white to-green-100 flex items-center justify-center px-4">
 
-      <div className="max-w-3xl mx-auto">
+      <div className="w-full max-w-md">
 
-        {/* Header */}
-        <div className="text-center mb-8">
-          <img src={logo} className="w-16 h-16 mx-auto rounded-full shadow mb-3" />
-          <h1 className="text-3xl font-extrabold text-green-700">
-            Join {chamaData.name}
-          </h1>
-          <p className="text-gray-600">
-            Invite Code: <span className="font-bold">{code}</span>
-          </p>
-
-          {/* 👥 Members preview */}
-          <p className="text-sm text-gray-500 mt-1">
-            👥 {chamaData.members} members already joined
-          </p>
+        {/* LOGO */}
+        <div className="flex flex-col items-center mb-6">
+          <img src={logo} alt="SmartChama" className="w-14 h-14 rounded-full shadow" />
+          <h1 className="text-green-700 font-bold mt-2">SmartChama</h1>
         </div>
 
-        {/* Card */}
-        <div className="bg-white rounded-3xl shadow-xl p-6 border">
+        {/* CARD */}
+        <motion.div
+          initial={{ opacity: 0, y: 30 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.4 }}
+          className="bg-white rounded-3xl shadow-xl p-8 border border-gray-100"
+        >
 
-          <AnimatePresence mode="wait">
+          {/* LOADING */}
+          {loadingChama ? (
+            <div className="text-center py-10 text-gray-500 animate-pulse">
+              Loading chama details...
+            </div>
+          ) : (
+            <>
+              {/* CHAMA PREVIEW */}
+              <div className="text-center mb-6">
+                <h2 className="text-2xl font-bold">{chama.name}</h2>
+                <p className="text-green-600 text-sm mt-1">
+                  Invite Code: {inviteCode}
+                </p>
+              </div>
 
-            {/* STEP 1 */}
-            {step === 1 && (
-              <motion.div key="1" initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
-                <h2 className="font-semibold mb-4">Personal Info</h2>
-
-                <input
-                  placeholder="Full name"
-                  className="input"
-                  value={personal.fullName}
-                  onChange={(e) =>
-                    setPersonal({ ...personal, fullName: e.target.value })
-                  }
-                />
-
-                <input
-                  placeholder="Email"
-                  className="input mt-3"
-                  value={personal.email}
-                  onChange={(e) =>
-                    setPersonal({ ...personal, email: e.target.value })
-                  }
-                />
-
-                <input
-                  placeholder="Phone"
-                  className="input mt-3"
-                  value={personal.phone}
-                  onChange={(e) =>
-                    setPersonal({ ...personal, phone: e.target.value })
-                  }
-                />
-
-                {/* Upload */}
-                <div className="mt-4">
-                  <input type="file" onChange={onProfileChange} />
-                  {profilePreview && (
-                    <img
-                      src={profilePreview}
-                      className="w-14 h-14 rounded-full mt-2"
-                    />
-                  )}
+              {/* DETAILS */}
+              <div className="bg-green-50 rounded-xl p-4 text-sm space-y-2 mb-6">
+                <div className="flex justify-between">
+                  <span>Members</span>
+                  <span className="font-semibold">{chama.members}</span>
                 </div>
-              </motion.div>
-            )}
+                <div className="flex justify-between">
+                  <span>Contribution</span>
+                  <span className="font-semibold">{chama.contribution}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span>Meetings</span>
+                  <span className="font-semibold">{chama.schedule}</span>
+                </div>
+              </div>
 
-            {/* STEP 2 */}
-            {step === 2 && (
-              <motion.div key="2" initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
-                <h2 className="font-semibold mb-4">About You</h2>
+              <p className="text-gray-600 text-sm text-center mb-6">
+                {chama.description}
+              </p>
+
+              {/* FORM */}
+              <form onSubmit={handleJoin} className="space-y-4">
 
                 <input
-                  placeholder="Occupation"
-                  className="input mb-3"
-                  value={about.occupation}
-                  onChange={(e) =>
-                    setAbout({ ...about, occupation: e.target.value })
-                  }
+                  placeholder="Full Name"
+                  value={form.name}
+                  onChange={(e) => handleChange("name", e.target.value)}
+                  className="w-full border px-4 py-3 rounded-xl focus:ring-2 focus:ring-green-500"
                 />
 
-                <textarea
-                  placeholder="Tell us about yourself..."
-                  className="input"
-                  value={about.description}
-                  onChange={(e) =>
-                    setAbout({ ...about, description: e.target.value })
-                  }
+                <input
+                  type="email"
+                  placeholder="Email Address"
+                  value={form.email}
+                  onChange={(e) => handleChange("email", e.target.value)}
+                  className="w-full border px-4 py-3 rounded-xl focus:ring-2 focus:ring-green-500"
                 />
-              </motion.div>
-            )}
 
-            {/* STEP 3 */}
-            {step === 3 && (
-              <motion.div key="3" initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
-                <h2 className="font-semibold mb-4">Security</h2>
+                <input
+                  placeholder="Phone (07XXXXXXXX)"
+                  value={form.phone}
+                  onChange={(e) => handleChange("phone", e.target.value)}
+                  className="w-full border px-4 py-3 rounded-xl focus:ring-2 focus:ring-green-500"
+                />
 
                 <input
                   type="password"
-                  placeholder="Password"
-                  className="input"
-                  value={security.password}
-                  onChange={(e) =>
-                    setSecurity({ ...security, password: e.target.value })
-                  }
+                  placeholder="Create Password"
+                  value={form.password}
+                  onChange={(e) => handleChange("password", e.target.value)}
+                  className="w-full border px-4 py-3 rounded-xl focus:ring-2 focus:ring-green-500"
                 />
-
-                {/* 🔐 strength */}
-                <p className={`text-sm mt-1 ${
-                  passwordStrength === "Strong"
-                    ? "text-green-600"
-                    : passwordStrength === "Medium"
-                    ? "text-yellow-600"
-                    : "text-red-600"
-                }`}>
-                  {passwordStrength && `Strength: ${passwordStrength}`}
-                </p>
 
                 <input
                   type="password"
                   placeholder="Confirm Password"
-                  className="input mt-3"
-                  value={security.confirmPassword}
+                  value={form.confirmPassword}
                   onChange={(e) =>
-                    setSecurity({
-                      ...security,
-                      confirmPassword: e.target.value,
-                    })
+                    handleChange("confirmPassword", e.target.value)
                   }
+                  className="w-full border px-4 py-3 rounded-xl focus:ring-2 focus:ring-green-500"
                 />
 
-                <label className="flex gap-2 mt-3 text-sm">
-                  <input
-                    type="checkbox"
-                    checked={security.acceptTerms}
-                    onChange={(e) =>
-                      setSecurity({
-                        ...security,
-                        acceptTerms: e.target.checked,
-                      })
-                    }
-                  />
-                  I agree to terms
-                </label>
-
-                {/* 📱 M-Pesa hint */}
-                <p className="text-xs text-gray-500 mt-3">
-                  💡 Payments in this chama are usually done via M-Pesa.
-                </p>
-              </motion.div>
-            )}
-
-            {/* STEP 4 */}
-            {step === 4 && (
-              <motion.div
-                key="4"
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                className="text-center"
-              >
-                <CheckCircle className="w-16 h-16 text-green-600 mx-auto mb-4" />
-                <h2 className="text-2xl font-bold text-green-700">
-                  Welcome 🎉
-                </h2>
-                <p className="text-gray-600">
-                  You’ve joined {chamaData.name}
-                </p>
-
-                <a
-                  href="/dashboard/member"
-                  className="mt-6 inline-block bg-green-600 text-white px-6 py-3 rounded-lg"
+                <button
+                  type="submit"
+                  disabled={loading}
+                  className="w-full py-3 rounded-xl text-white font-semibold bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 transition shadow-md"
                 >
-                  Go to Dashboard
-                </a>
-              </motion.div>
-            )}
-          </AnimatePresence>
-        </div>
+                  {loading ? "Joining..." : "Join This Chama"}
+                </button>
+              </form>
 
-        {/* Footer */}
-        {step !== 4 && (
-          <div className="flex justify-between mt-6 items-center">
-            <button onClick={handleBack} disabled={step === 1}>
-              ← Back
-            </button>
-
-            <p className="text-red-600 text-sm">{error}</p>
-
-            <button
-              onClick={handleNext}
-              className="bg-green-600 text-white px-6 py-3 rounded-lg"
-            >
-              {step === 3 ? (loading ? "Joining..." : "Join Chama") : "Next →"}
-            </button>
-          </div>
-        )}
+              {/* ALT */}
+              <div className="mt-6 text-center text-sm">
+                <p className="text-gray-500">Not your chama?</p>
+                <Link to="/" className="text-green-700 font-semibold hover:underline">
+                  Go Back
+                </Link>
+              </div>
+            </>
+          )}
+        </motion.div>
       </div>
-
-      {/* styles */}
-      <style>{`
-        .input {
-          width: 100%;
-          padding: 12px;
-          border-radius: 10px;
-          border: 1px solid #ddd;
-          outline: none;
-        }
-        .input:focus {
-          border-color: green;
-          box-shadow: 0 0 0 2px rgba(0,128,0,0.2);
-        }
-      `}</style>
     </main>
   );
 }

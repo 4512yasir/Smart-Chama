@@ -3,121 +3,167 @@ import { motion } from "framer-motion";
 
 const LandingPage = () => {
   return (
-    <div className="bg-white text-gray-900">
+    <div className="bg-white text-gray-900 overflow-hidden">
 
       {/* HERO */}
-      <section className="relative overflow-hidden">
-        <div className="max-w-7xl mx-auto px-6 py-20 text-center">
-          
+      <section className="relative py-24 px-6 text-center">
+
+        <div className="absolute top-[-100px] left-1/2 -translate-x-1/2 w-[600px] h-[600px] bg-green-300/30 blur-3xl rounded-full"></div>
+
+        <div className="relative max-w-6xl mx-auto">
+
+          <div className="inline-block mb-6 px-4 py-1 text-sm rounded-full bg-green-100 text-green-700 font-medium">
+            Built for Modern Chamas 🇰🇪
+          </div>
+
           <motion.h1
-            initial={{ opacity: 0, y: 20 }}
+            initial={{ opacity: 0, y: 30 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6 }}
-            className="text-4xl md:text-6xl font-bold leading-tight"
+            className="text-4xl md:text-6xl font-extrabold leading-tight"
           >
-            Manage Your Chama <br />
-            <span className="text-green-600">Smartly & Effortlessly</span>
+            The Smart Way to <br />
+            Manage Your Chama
           </motion.h1>
 
-          <motion.p
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.2 }}
-            className="mt-6 text-gray-600 text-lg max-w-2xl mx-auto"
-          >
-            Track contributions, manage members, and automate your group
-            finances — all in one powerful platform.
-          </motion.p>
-
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.4 }}
-            className="mt-8 flex justify-center gap-4"
-          >
-            <Link
-              to="/auth/register"
-              className="px-6 py-3 rounded-xl text-white bg-linear-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 shadow-lg transition"
-            >
-              Get Started
-            </Link>
-
-            <Link
-              to="/features"
-              className="px-6 py-3 rounded-xl border border-gray-300 hover:border-green-500 hover:text-green-600 transition"
-            >
-              Learn More
-            </Link>
-          </motion.div>
-        </div>
-
-        {/* Background Glow */}
-        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[600px] h-[600px] bg-green-200 opacity-30 blur-3xl rounded-full"></div>
-      </section>
-
-      {/* FEATURES */}
-      <section className="py-20 bg-gray-50">
-        <div className="max-w-7xl mx-auto px-6 text-center">
-          
-          <h2 className="text-3xl md:text-4xl font-bold">
-            Everything You Need to Run Your Chama
-          </h2>
-
-          <p className="mt-4 text-gray-600 max-w-xl mx-auto">
-            Simple tools designed to make group finance management seamless.
+          <p className="mt-6 text-gray-600 text-lg max-w-2xl mx-auto">
+            No more spreadsheets, confusion, or missed contributions.
+            SmartChama helps you manage everything in one place.
           </p>
 
-          <div className="mt-12 grid md:grid-cols-3 gap-8">
-            
-            {[
-              {
-                title: "Track Contributions",
-                desc: "Monitor member payments in real-time with clear records.",
-              },
-              {
-                title: "Manage Members",
-                desc: "Easily add, remove, and organize your chama members.",
-              },
-              {
-                title: "Automated Reports",
-                desc: "Get instant financial summaries and insights.",
-              },
-            ].map((feature, i) => (
-              <motion.div
-                key={i}
-                whileHover={{ y: -5 }}
-                className="p-6 bg-white rounded-2xl shadow hover:shadow-lg transition"
-              >
-                <h3 className="text-xl font-semibold text-green-600">
-                  {feature.title}
-                </h3>
-                <p className="mt-3 text-gray-600">{feature.desc}</p>
-              </motion.div>
-            ))}
+          <div className="mt-10 flex flex-col sm:flex-row justify-center gap-4">
+            <Link className="px-8 py-3 bg-green-600 text-white rounded-xl">
+              Get Started
+            </Link>
+            <Link className="px-8 py-3 border rounded-xl">
+              See How It Works
+            </Link>
+          </div>
 
+        </div>
+      </section>
+
+      {/* TRUST STATS */}
+      <section className="py-16 bg-gray-50 text-center">
+        <div className="max-w-5xl mx-auto grid md:grid-cols-3 gap-8">
+          <div>
+            <h2 className="text-3xl font-bold text-green-600">10,000+</h2>
+            <p className="text-gray-600">Transactions tracked</p>
+          </div>
+          <div>
+            <h2 className="text-3xl font-bold text-green-600">500+</h2>
+            <p className="text-gray-600">Chamas using SmartChama</p>
+          </div>
+          <div>
+            <h2 className="text-3xl font-bold text-green-600">99%</h2>
+            <p className="text-gray-600">Accuracy & transparency</p>
           </div>
         </div>
       </section>
 
-      {/* CTA */}
-      <section className="py-20 text-center">
-        <div className="max-w-3xl mx-auto px-6">
-          
-          <h2 className="text-3xl md:text-4xl font-bold">
-            Ready to Upgrade Your Chama?
-          </h2>
+      {/* HOW IT WORKS */}
+      <section className="py-24 px-6 text-center">
+        <h2 className="text-3xl font-bold mb-12">How It Works</h2>
 
-          <p className="mt-4 text-gray-600">
-            Join now and start managing your finances like a pro.
-          </p>
+        <div className="grid md:grid-cols-3 gap-8 max-w-6xl mx-auto">
 
-          <Link
-            to="/auth/register"
-            className="inline-block mt-8 px-8 py-3 rounded-xl text-white bg-linear-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 shadow-lg transition"
-          >
-            Create Your Chama
-          </Link>
+          {[
+            {
+              step: "1",
+              title: "Create Your Chama",
+              desc: "Set up your group in seconds as a chairperson.",
+            },
+            {
+              step: "2",
+              title: "Invite Members",
+              desc: "Share your unique invite link with members.",
+            },
+            {
+              step: "3",
+              title: "Track Everything",
+              desc: "Monitor contributions and activities in real-time.",
+            },
+          ].map((item, i) => (
+            <div key={i} className="p-6 border rounded-2xl">
+              <div className="text-green-600 font-bold text-xl mb-2">
+                Step {item.step}
+              </div>
+              <h3 className="font-semibold text-lg">{item.title}</h3>
+              <p className="text-gray-600 mt-2">{item.desc}</p>
+            </div>
+          ))}
+
         </div>
+      </section>
+
+      {/* FEATURES */}
+      <section className="py-24 bg-gray-50 px-6 text-center">
+        <h2 className="text-3xl font-bold">Why Choose SmartChama?</h2>
+
+        <div className="mt-12 grid md:grid-cols-3 gap-8 max-w-6xl mx-auto">
+
+          {[
+            "Real-time contribution tracking",
+            "Secure and transparent records",
+            "Easy member management",
+            "Automated financial summaries",
+            "Mobile-friendly access",
+            "Instant notifications",
+          ].map((feature, i) => (
+            <div key={i} className="bg-white p-6 rounded-2xl shadow">
+              {feature}
+            </div>
+          ))}
+
+        </div>
+      </section>
+
+      {/* TESTIMONIALS */}
+      <section className="py-24 px-6 text-center">
+        <h2 className="text-3xl font-bold mb-12">
+          What Our Users Say
+        </h2>
+
+        <div className="grid md:grid-cols-3 gap-8 max-w-6xl mx-auto">
+
+          {[
+            {
+              name: "Mary W.",
+              text: "Managing our chama has never been easier!",
+            },
+            {
+              name: "James K.",
+              text: "No more confusion about contributions.",
+            },
+            {
+              name: "Amina N.",
+              text: "Simple, clean, and very powerful.",
+            },
+          ].map((t, i) => (
+            <div key={i} className="p-6 bg-gray-50 rounded-2xl">
+              <p className="text-gray-600">"{t.text}"</p>
+              <h4 className="mt-4 font-semibold">{t.name}</h4>
+            </div>
+          ))}
+
+        </div>
+      </section>
+
+      {/* FINAL CTA */}
+      <section className="py-24 text-center bg-green-600 text-white">
+        <h2 className="text-3xl font-bold">
+          Start Managing Your Chama Today
+        </h2>
+
+        <p className="mt-4">
+          Join hundreds of groups already using SmartChama.
+        </p>
+
+        <Link
+          to="/create"
+          className="inline-block mt-8 px-10 py-3 bg-white text-green-600 rounded-xl font-semibold"
+        >
+          Create Your Chama →
+        </Link>
       </section>
 
     </div>

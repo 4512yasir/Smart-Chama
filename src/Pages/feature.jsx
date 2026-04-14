@@ -184,7 +184,7 @@ const Features = () => {
         </p>
 
         <Link
-          to="/auth/register"
+          to="/create"
           className="inline-block mt-8 px-8 py-3 rounded-xl text-white bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 shadow-lg transition"
         >
           Get Started
