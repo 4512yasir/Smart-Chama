@@ -31,10 +31,10 @@ const LandingPage = () => {
           </p>
 
           <div className="mt-10 flex flex-col sm:flex-row justify-center gap-4">
-            <Link className="px-8 py-3 bg-green-600 text-white rounded-xl">
+            <Link to="/create" className="px-8 py-3 bg-green-600 text-white rounded-xl">
               Get Started
             </Link>
-            <Link className="px-8 py-3 border rounded-xl">
+            <Link to="/features" className="px-8 py-3 border rounded-xl">
               See How It Works
             </Link>
           </div>
