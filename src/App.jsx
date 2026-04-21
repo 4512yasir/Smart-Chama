@@ -15,8 +15,16 @@ import ResetPassword from "./Pages/Resetpassword";
 
 import ChairpersonDashboard from "./Pages/Dashboard/ChairpersonDashboard";
 import MemberDashboard from "./Pages/Dashboard/MemberDashboard";
+import Contributions from "./Pages/Dashboard/myContribution";
+import MyLoan from "./Pages/Dashboard/Myloan"
 
 import ProtectedRoute from "./component/ProtectedRoutes";
+import MemberLoanPage from "./Pages/Dashboard/Myloan";
+import NotificationsPage from "./Pages/Dashboard/NotificationPage";
+import MemberSettingsPage from "./Pages/Dashboard/SettingPage";
+import MemberHistoryPage from "./Pages/Dashboard/MemberHisto";
+import MemberVotingPage from "./Pages/Dashboard/Membervoting";
+import MemberReportsPage from "./Pages/Dashboard/MemberReport";
 
 export default function App() {
   return (
@@ -45,6 +53,13 @@ export default function App() {
           {/* Member only */}
           <Route element={<ProtectedRoute roles={["member"]} />}>
             <Route path="member" element={<MemberDashboard />} />
+            <Route path="/dashboard/member/mycontributions" element={<Contributions />} />
+            <Route path="/dashboard/member/myloan" element={<MemberLoanPage/>}/>
+            <Route path="/dashboard/member/notification" element={<NotificationsPage/>}/>
+            <Route path="/dashboard/member/setting" element={<MemberSettingsPage/>}/>
+            <Route path="/dashboard/member/history" element={<MemberHistoryPage/>}/>
+            <Route path="/dashboard/member/voting" element={<MemberVotingPage/>}/>
+            <Route path="/dashboard/member/reports" element={<MemberReportsPage/>}/>
           </Route>
         </Route>
 

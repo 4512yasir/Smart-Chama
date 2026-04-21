@@ -10,8 +10,10 @@ import {
   Bell,
   ChevronLeft,
   ChevronRight,
+  Settings
 } from "lucide-react";
 import logo from "../assets/smartchamalogo.jpeg";
+import { path } from "framer-motion/client";
 
 export default function DashboardLayout() {
   const navigate = useNavigate();
@@ -37,11 +39,19 @@ export default function DashboardLayout() {
     { name: "Members", path: "/dashboard/chairperson/members", icon: Users },
     { name: "Contributions", path: "/dashboard/chairperson/contributions", icon: Wallet },
     { name: "Reports", path: "/dashboard/chairperson/reports", icon: BarChart3 },
+    
   ];
 
   const memberLinks = [
     { name: "Dashboard", path: "/dashboard/member", icon: LayoutDashboard },
-    { name: "My Contributions", path: "/dashboard/member/contributions", icon: Wallet },
+    { name: "My Contributions", path: "/dashboard/member/mycontributions", icon: Wallet },
+    { name: "Loan", path:"/dashboard/member/myloan", icon:Wallet},
+    {name:"Notification", path:"/dashboard/member/notification", icon:Bell},
+    {name:"History" , path:"/dashboard/member/history", icon:Wallet },
+    {name:"Voting", path:"/dashboard/member/voting", icon:Users},
+    {name:"Reports", path:"/dashboard/member/reports", icon:BarChart3},
+    {name:"Setting",path:"/dashboard/member/setting", icon: Settings},
+    
   ];
 
   const navLinks = user?.role === "chairperson" ? chairLinks : memberLinks;

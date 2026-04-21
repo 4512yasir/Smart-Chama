@@ -1,84 +1,153 @@
-import { useState } from "react";
-import { motion } from "framer-motion";
+import { useState, useEffect } from "react";
 import {
-  Bell,
   Wallet,
   Users,
   Send,
+  Bell,
   Copy,
   Trophy,
-  Calendar,
+  Flame,
 } from "lucide-react";
-
+import QRCode from "react-qr-code";
 import ContributionChart from "../../component/ContributionChart";
 
 /* ---------------- MOCK DATA ---------------- */
 const inviteLink = "https://smartchama.app/join/ABC123";
 
 const leaderboard = [
-  { name: "John Doe", amount: 24000 },
-  { name: "Mary Wanjiku", amount: 18000 },
-  { name: "You", amount: 12000 },
+  { name: "John", amount: 24000, badge: "🔥 Top Saver" },
+  { name: "Mary", amount: 18000, badge: "💰 Consistent" },
+  { name: "You", amount: 12000, badge: "🚀 Rising" },
 ];
 
-const activityFeed = [
-  { text: "You paid KES 2,000", time: "2h ago", type: "success" },
-  { text: "Member joined your chama", time: "1d ago", type: "info" },
-  { text: "Contribution cycle started", time: "2d ago", type: "system" },
+const activities = [
+  "You paid KES 2,000",
+  "New member joined",
+  "Cycle started",
 ];
 
 /* ---------------- DASHBOARD ---------------- */
 export default function MemberDashboard() {
   const [copied, setCopied] = useState(false);
+  const [toast, setToast] = useState(null);
+  const [streak] = useState(4);
 
+  const [loanAmount, setLoanAmount] = useState("");
+  const [loanLoading, setLoanLoading] = useState(false);
+
+  /* ---------------- COPY INVITE ---------------- */
   const copyInvite = () => {
     navigator.clipboard.writeText(inviteLink);
     setCopied(true);
-    setTimeout(() => setCopied(false), 1500);
+    setToast("Invite link copied!");
+    setTimeout(() => {
+      setCopied(false);
+      setToast(null);
+    }, 1500);
   };
+
+  /* ---------------- QUICK ACTIONS ---------------- */
+  const handleQuickAction = (type) => {
+    switch (type) {
+      case "pay":
+        setToast("Redirecting to payment...");
+        break;
+      case "members":
+        setToast("Opening members...");
+        break;
+      case "send":
+        setToast("Opening transfer...");
+        break;
+      case "alerts":
+        setToast("Showing notifications...");
+        break;
+      default:
+        break;
+    }
+
+    setTimeout(() => setToast(null), 1500);
+  };
+
+  /* ---------------- LOAN REQUEST ---------------- */
+  const handleLoanRequest = () => {
+    if (!loanAmount) {
+      setToast("Enter loan amount");
+      setTimeout(() => setToast(null), 1500);
+      return;
+    }
+
+    setLoanLoading(true);
+
+    setTimeout(() => {
+      setLoanLoading(false);
+      setLoanAmount("");
+      setToast("Loan request submitted ✅");
+      setTimeout(() => setToast(null), 1500);
+    }, 1200);
+  };
+
+  /* ---------------- FAKE LIVE NOTIFICATIONS ---------------- */
+  useEffect(() => {
+    const interval = setInterval(() => {
+      const random =
+        activities[Math.floor(Math.random() * activities.length)];
+      setToast(random);
+
+      setTimeout(() => setToast(null), 2000);
+    }, 12000);
+
+    return () => clearInterval(interval);
+  }, []);
 
   return (
     <div className="space-y-8">
 
+      {/* TOAST */}
+      {toast && (
+        <div className="fixed top-6 right-6 bg-black text-white px-4 py-2 rounded-xl shadow-lg text-sm z-50">
+          {toast}
+        </div>
+      )}
+
       {/* HEADER */}
-      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
+      <div className="flex flex-col md:flex-row justify-between gap-4">
         <div>
-          <h1 className="text-2xl md:text-3xl font-bold">
-            Member Dashboard
-          </h1>
-          <p className="text-gray-500">
-            Manage your chama activity in real time
-          </p>
+          <h1 className="text-3xl font-bold">Dashboard</h1>
+          <p className="text-gray-500">Smart financial management</p>
         </div>
 
-        {/* INVITE BUTTON */}
         <button
           onClick={copyInvite}
           className="flex items-center gap-2 bg-green-600 text-white px-4 py-2 rounded-xl hover:bg-green-700 transition"
         >
           <Copy size={16} />
-          {copied ? "Copied!" : "Invite Members"}
+          {copied ? "Copied!" : "Invite"}
         </button>
       </div>
 
-      {/* TOP STATS */}
-      <div className="grid md:grid-cols-3 gap-4">
-
-        <div className="bg-white p-5 rounded-2xl border shadow-sm">
+      {/* STATS */}
+      <div className="grid md:grid-cols-4 gap-4">
+        <div className="bg-white p-5 rounded-2xl border">
           <p className="text-sm text-gray-500">Contributions</p>
-          <h2 className="text-2xl font-bold mt-1">KES 12,000</h2>
+          <h2 className="text-xl font-bold">KES 12,000</h2>
         </div>
 
-        <div className="bg-white p-5 rounded-2xl border shadow-sm">
+        <div className="bg-white p-5 rounded-2xl border">
           <p className="text-sm text-gray-500">Next Payment</p>
-          <h2 className="text-2xl font-bold mt-1">KES 2,000</h2>
+          <h2 className="text-xl font-bold">KES 2,000</h2>
+        </div>
+
+        <div className="bg-white p-5 rounded-2xl border">
+          <p className="text-sm text-gray-500">Streak</p>
+          <h2 className="text-xl font-bold flex items-center gap-2">
+            <Flame className="text-orange-500" /> {streak} months
+          </h2>
         </div>
 
         <div className="bg-green-600 text-white p-5 rounded-2xl">
-          <p className="text-sm text-green-100">Status</p>
-          <h2 className="text-2xl font-bold mt-1">Active</h2>
+          <p className="text-sm">Status</p>
+          <h2 className="text-xl font-bold">Active</h2>
         </div>
-
       </div>
 
       {/* MAIN GRID */}
@@ -88,101 +157,115 @@ export default function MemberDashboard() {
         <div className="lg:col-span-2 space-y-6">
 
           {/* CHART */}
-          <div className="bg-white p-6 rounded-3xl border shadow-sm">
-            <div className="flex items-center gap-2 mb-4">
-              <Calendar className="text-green-600" />
-              <h2 className="font-semibold">Contribution Trends</h2>
-            </div>
+          <div className="bg-white p-6 rounded-3xl border">
+            <h2 className="font-semibold mb-4">Contribution Trends</h2>
             <ContributionChart />
           </div>
 
-          {/* ACTIVITY FEED */}
-          <div className="bg-white p-6 rounded-3xl border shadow-sm">
-            <h2 className="font-semibold mb-4">Live Activity Feed</h2>
+          {/* ACTIVITY */}
+          <div className="bg-white p-6 rounded-3xl border">
+            <h2 className="font-semibold mb-4">Activity</h2>
 
-            <div className="space-y-4">
-              {activityFeed.map((a, i) => (
-                <div key={i} className="flex gap-3">
-                  <div className="w-2 h-2 mt-2 rounded-full bg-green-500"></div>
-                  <div>
-                    <p className="text-sm font-medium">{a.text}</p>
-                    <p className="text-xs text-gray-400">{a.time}</p>
-                  </div>
-                </div>
-              ))}
-            </div>
+            {activities.map((a, i) => (
+              <div key={i} className="text-sm text-gray-600 mb-2">
+                • {a}
+              </div>
+            ))}
           </div>
 
         </div>
 
-        {/* RIGHT SIDE */}
+        {/* RIGHT */}
         <div className="space-y-6">
 
-          {/* INVITE CARD */}
-          <div className="bg-white p-5 rounded-3xl border shadow-sm">
-            <h2 className="font-semibold mb-3">Invite Members</h2>
+          {/* QR INVITE */}
+          <div className="bg-white p-5 rounded-3xl border text-center">
+            <h2 className="font-semibold mb-3">Invite via QR</h2>
 
-            <div className="bg-gray-100 p-3 rounded-xl text-xs break-all">
-              {inviteLink}
+            <div className="bg-white p-3 inline-block rounded-xl">
+              <QRCode value={inviteLink} size={120} />
             </div>
 
-            <button
-              onClick={copyInvite}
-              className="mt-3 w-full bg-green-600 text-white py-2 rounded-xl hover:bg-green-700 transition"
-            >
-              Copy Invite Link
-            </button>
+            <p className="text-xs text-gray-500 mt-2">
+              Scan to join your chama
+            </p>
           </div>
 
           {/* LEADERBOARD */}
-          <div className="bg-white p-5 rounded-3xl border shadow-sm">
-            <div className="flex items-center gap-2 mb-4">
+          <div className="bg-white p-5 rounded-3xl border">
+            <div className="flex items-center gap-2 mb-3">
               <Trophy className="text-yellow-500" />
               <h2 className="font-semibold">Leaderboard</h2>
             </div>
 
-            <div className="space-y-3">
-              {leaderboard.map((m, i) => (
-                <div
-                  key={i}
-                  className="flex justify-between items-center"
-                >
-                  <p className="text-sm">{m.name}</p>
-                  <span className="text-sm font-semibold">
-                    KES {m.amount}
-                  </span>
+            {leaderboard.map((m, i) => (
+              <div key={i} className="flex justify-between text-sm mb-2">
+                <div>
+                  <p>{m.name}</p>
+                  <p className="text-xs text-gray-400">{m.badge}</p>
                 </div>
-              ))}
-            </div>
+                <span className="font-semibold">KES {m.amount}</span>
+              </div>
+            ))}
           </div>
 
           {/* QUICK ACTIONS */}
-          <div className="bg-white p-5 rounded-3xl border shadow-sm">
+          <div className="bg-white p-5 rounded-3xl border">
             <h2 className="font-semibold mb-3">Quick Actions</h2>
 
             <div className="grid grid-cols-2 gap-3">
-
-              <button className="flex items-center gap-2 p-3 bg-gray-50 rounded-xl">
+              <button
+                onClick={() => handleQuickAction("pay")}
+                className="p-3 bg-gray-50 hover:bg-green-50 rounded-xl flex gap-2 items-center transition"
+              >
                 <Wallet size={16} /> Pay
               </button>
 
-              <button className="flex items-center gap-2 p-3 bg-gray-50 rounded-xl">
+              <button
+                onClick={() => handleQuickAction("members")}
+                className="p-3 bg-gray-50 hover:bg-green-50 rounded-xl flex gap-2 items-center transition"
+              >
                 <Users size={16} /> Members
               </button>
 
-              <button className="flex items-center gap-2 p-3 bg-gray-50 rounded-xl">
+              <button
+                onClick={() => handleQuickAction("send")}
+                className="p-3 bg-gray-50 hover:bg-green-50 rounded-xl flex gap-2 items-center transition"
+              >
                 <Send size={16} /> Send
               </button>
 
-              <button className="flex items-center gap-2 p-3 bg-gray-50 rounded-xl">
+              <button
+                onClick={() => handleQuickAction("alerts")}
+                className="p-3 bg-gray-50 hover:bg-green-50 rounded-xl flex gap-2 items-center transition"
+              >
                 <Bell size={16} /> Alerts
               </button>
-
             </div>
           </div>
 
-        </div>
+          {/* LOAN */}
+          <div className="bg-white p-5 rounded-3xl border">
+            <h2 className="font-semibold mb-3">Request Loan</h2>
 
+            <input
+              type="number"
+              placeholder="Amount (KES)"
+              value={loanAmount}
+              onChange={(e) => setLoanAmount(e.target.value)}
+              className="w-full border px-3 py-2 rounded-lg mb-3 focus:ring-2 focus:ring-green-500 outline-none"
+            />
+
+            <button
+              onClick={handleLoanRequest}
+              disabled={loanLoading}
+              className="w-full bg-green-600 text-white py-2 rounded-xl hover:bg-green-700 transition"
+            >
+              {loanLoading ? "Processing..." : "Request Loan"}
+            </button>
+          </div>
+
+        </div>
       </div>
     </div>
   );
