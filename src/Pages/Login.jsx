@@ -7,7 +7,7 @@ import logo from "../assets/smartchamalogo.jpeg";
 export default function LoginPage() {
   const navigate = useNavigate();
 
-  const [step, setStep] = useState("login"); // login | otp
+  const [step, setStep] = useState("login");
   const [loading, setLoading] = useState(false);
 
   const [identifier, setIdentifier] = useState("");
@@ -16,17 +16,35 @@ export default function LoginPage() {
 
   const [error, setError] = useState("");
 
-  // Detect Kenyan phone
   const isPhone = /^0\d{9}$/.test(identifier);
 
-  // ------------------------
-  // LOGIN HANDLER
-  // ------------------------
+  /* ---------------- FAKE USERS ---------------- */
+  const users = [
+    {
+      email: "member@demo.com",
+      password: "123456",
+      role: "member",
+      full_name: "John Member",
+    },
+    {
+      email: "chair@demo.com",
+      password: "123456",
+      role: "chairperson",
+      full_name: "Chair Admin",
+    },
+  ];
+
+  /* ---------------- LOGIN ---------------- */
   const handleLogin = (e) => {
     e.preventDefault();
 
     if (!identifier) {
       setError("Enter email or phone");
+      return;
+    }
+
+    if (!isPhone && !password) {
+      setError("Enter password");
       return;
     }
 
@@ -36,28 +54,59 @@ export default function LoginPage() {
     setTimeout(() => {
       setLoading(false);
 
+      // 📱 PHONE LOGIN
       if (isPhone) {
-        toast.success("OTP sent to your phone 📲");
+        toast.success("OTP sent 📲 (use 1234)");
         setStep("otp");
+        return;
+      }
+
+      // 📧 EMAIL LOGIN
+      const user = users.find(
+        (u) =>
+          u.email === identifier.toLowerCase() &&
+          u.password === password
+      );
+
+      if (!user) {
+        setError("Invalid email or password");
+        return;
+      }
+
+      localStorage.setItem("user", JSON.stringify(user));
+
+      toast.success(`Welcome ${user.full_name} 🎉`);
+
+      
+       console.log("USER:", user);
+
+      if (user.role === "chairperson") {
+        navigate("/dashboard/chairperson");
       } else {
-        toast.success("Welcome back 🎉");
         navigate("/dashboard/member");
       }
     }, 800);
   };
 
-  // ------------------------
-  // OTP HANDLER
-  // ------------------------
+  /* ---------------- OTP ---------------- */
   const handleOTP = (e) => {
     e.preventDefault();
 
-    if (otp.length < 4) {
-      setError("Enter valid OTP");
+    if (otp !== "1234") {
+      setError("Invalid OTP (use 1234)");
       return;
     }
 
+    // default phone users = member
+    const user = {
+      full_name: "Mobile User",
+      role: "member",
+    };
+
+    localStorage.setItem("user", JSON.stringify(user));
+
     toast.success("Logged in 🎉");
+
     navigate("/dashboard/member");
   };
 
@@ -67,34 +116,28 @@ export default function LoginPage() {
       <motion.div
         initial={{ opacity: 0, y: 10 }}
         animate={{ opacity: 1, y: 0 }}
-        className="w-full max-w-md bg-white rounded-2xl shadow-sm border border-gray-200 p-6"
+        className="w-full max-w-md bg-white rounded-2xl shadow-sm border p-6"
       >
 
         {/* HEADER */}
         <div className="flex flex-col items-center mb-6">
           <img src={logo} className="w-12 h-12 rounded-full" />
-          <h1 className="text-xl font-semibold mt-3 text-gray-900">
-            SmartChama
-          </h1>
+          <h1 className="text-xl font-semibold mt-3">SmartChama</h1>
           <p className="text-gray-500 text-sm">
             {step === "login"
               ? "Login to continue"
-              : "Enter OTP sent to your phone"}
+              : "Enter OTP (1234)"}
           </p>
         </div>
 
         {/* ERROR */}
         {error && (
-          <motion.div
-            initial={{ x: 0 }}
-            animate={{ x: [-5, 5, -5, 5, 0] }}
-            className="text-red-500 text-sm mb-3 text-center"
-          >
+          <div className="text-red-500 text-sm mb-3 text-center">
             {error}
-          </motion.div>
+          </div>
         )}
 
-        {/* LOGIN STEP */}
+        {/* LOGIN */}
         {step === "login" && (
           <form onSubmit={handleLogin} className="space-y-4">
 
@@ -103,7 +146,7 @@ export default function LoginPage() {
               placeholder="Email or 07XXXXXXXX"
               value={identifier}
               onChange={(e) => setIdentifier(e.target.value)}
-              className="w-full px-4 py-3 rounded-xl border border-gray-300 focus:ring-2 focus:ring-green-500 outline-none"
+              className="w-full px-4 py-3 rounded-xl border focus:ring-2 focus:ring-green-500 outline-none"
             />
 
             {!isPhone && (
@@ -112,22 +155,18 @@ export default function LoginPage() {
                 placeholder="Password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                className="w-full px-4 py-3 rounded-xl border border-gray-300 focus:ring-2 focus:ring-green-500 outline-none"
+                className="w-full px-4 py-3 rounded-xl border focus:ring-2 focus:ring-green-500 outline-none"
               />
             )}
 
-            <button className="w-full py-3 bg-green-600 text-white rounded-xl font-medium hover:bg-green-700 transition">
-              {loading
-                ? "Processing..."
-                : isPhone
-                ? "Send OTP"
-                : "Login"}
+            <button className="w-full py-3 bg-green-600 text-white rounded-xl">
+              {loading ? "Processing..." : isPhone ? "Send OTP" : "Login"}
             </button>
 
           </form>
         )}
 
-        {/* OTP STEP */}
+        {/* OTP */}
         {step === "otp" && (
           <form onSubmit={handleOTP} className="space-y-4">
 
@@ -136,10 +175,10 @@ export default function LoginPage() {
               placeholder="Enter OTP"
               value={otp}
               onChange={(e) => setOtp(e.target.value)}
-              className="w-full px-4 py-3 text-center tracking-widest rounded-xl border border-gray-300 focus:ring-2 focus:ring-green-500 outline-none"
+              className="w-full px-4 py-3 text-center tracking-widest rounded-xl border focus:ring-2 focus:ring-green-500 outline-none"
             />
 
-            <button className="w-full py-3 bg-green-600 text-white rounded-xl font-medium hover:bg-green-700 transition">
+            <button className="w-full py-3 bg-green-600 text-white rounded-xl">
               Verify & Login
             </button>
 
@@ -153,10 +192,18 @@ export default function LoginPage() {
           </form>
         )}
 
+        {/* DEMO HELP */}
+        <div className="mt-6 text-xs text-gray-400 text-center space-y-1">
+          <p>Demo Accounts:</p>
+          <p>👤 member@demo.com / 123456</p>
+          <p>👑 chair@demo.com / 123456</p>
+          <p>📱 0712345678 → OTP: 1234</p>
+        </div>
+
         {/* FOOTER */}
         <div className="text-center mt-6 text-sm text-gray-500">
           New here?{" "}
-          <Link to="/create" className="text-green-600 font-medium hover:underline">
+          <Link to="/create" className="text-green-600 font-medium">
             Create Chama
           </Link>
         </div>

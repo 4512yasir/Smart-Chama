@@ -16,25 +16,32 @@ import ResetPassword from "./Pages/Resetpassword";
 import ChairpersonDashboard from "./Pages/Dashboard/ChairpersonDashboard";
 import MemberDashboard from "./Pages/Dashboard/MemberDashboard";
 import Contributions from "./Pages/Dashboard/myContribution";
-import MyLoan from "./Pages/Dashboard/Myloan"
-
-import ProtectedRoute from "./component/ProtectedRoutes";
 import MemberLoanPage from "./Pages/Dashboard/Myloan";
 import NotificationsPage from "./Pages/Dashboard/NotificationPage";
 import MemberSettingsPage from "./Pages/Dashboard/SettingPage";
 import MemberHistoryPage from "./Pages/Dashboard/MemberHisto";
 import MemberVotingPage from "./Pages/Dashboard/Membervoting";
 import MemberReportsPage from "./Pages/Dashboard/MemberReport";
+import ChairMembersPage from "./Pages/Dashboard/ChairMemberPage";
+import MemberProfilePage from "./Pages/Dashboard/memberprofilepage";
+import ChairContribution from "./Pages/Dashboard/ChairContribution";
+import ChairVotingPage from "./Pages/Dashboard/ChairVotingPage";
+import ChairLoanPage from "./Pages/Dashboard/chairloan";
+import ChairActivities from "./Pages/Dashboard/chairactivities";
+import ChairReportPage from "./Pages/Dashboard/chairreport";
+import ChairSettingsPage from "./Pages/Dashboard/chairsetting"
+import ProtectedRoute from "./component/ProtectedRoutes";
+import { CiHardDrive } from "react-icons/ci";
 
 export default function App() {
   return (
     <>
       <Routes>
-        {/* 🌍 Public Pages */}
+
+        {/* 🌍 Public */}
         <Route element={<PublicLayout />}>
           <Route path="/" element={<LandingPage />} />
           <Route path="/features" element={<Features />} />
-
           <Route path="/subscription" element={<Pricing />} />
           <Route path="/create" element={<RegisterChama />} />
           <Route path="/join/:code" element={<JoinChama />} />
@@ -43,28 +50,39 @@ export default function App() {
           <Route path="/reset-password" element={<ResetPassword />} />
         </Route>
 
-        {/* 🔐 Dashboard Pages */}
+        {/* 🔐 Dashboard */}
         <Route path="/dashboard" element={<DashboardLayout />}>
-          {/* Chairperson only */}
+
+          {/* Chairperson */}
           <Route element={<ProtectedRoute roles={["chairperson"]} />}>
             <Route path="chairperson" element={<ChairpersonDashboard />} />
+            <Route path="chairperson/members" element={<ChairMembersPage />} />
+            <Route path="chairperson/members/:id" element={<MemberProfilePage />} />
+            <Route path="chairperson/contributions" element={<ChairContribution />} />
+            <Route path="chairperson/loans" element={<ChairLoanPage />} />
+            <Route path="chairperson/activities" element={<ChairActivities />} />
+            <Route path="chairperson/setting" element={<ChairSettingsPage />} />
+            <Route path="chairperson/voting" element={<ChairVotingPage />} />
+            <Route path="chairperson/reports" element={<ChairReportPage />} />
           </Route>
 
-          {/* Member only */}
+          {/* Member */}
           <Route element={<ProtectedRoute roles={["member"]} />}>
             <Route path="member" element={<MemberDashboard />} />
-            <Route path="/dashboard/member/mycontributions" element={<Contributions />} />
-            <Route path="/dashboard/member/myloan" element={<MemberLoanPage/>}/>
-            <Route path="/dashboard/member/notification" element={<NotificationsPage/>}/>
-            <Route path="/dashboard/member/setting" element={<MemberSettingsPage/>}/>
-            <Route path="/dashboard/member/history" element={<MemberHistoryPage/>}/>
-            <Route path="/dashboard/member/voting" element={<MemberVotingPage/>}/>
-            <Route path="/dashboard/member/reports" element={<MemberReportsPage/>}/>
+            <Route path="member/mycontributions" element={<Contributions />} />
+            <Route path="member/myloan" element={<MemberLoanPage />} />
+            <Route path="member/notification" element={<NotificationsPage />} />
+            <Route path="member/setting" element={<MemberSettingsPage />} />
+            <Route path="member/history" element={<MemberHistoryPage />} />
+            <Route path="member/voting" element={<MemberVotingPage />} />
+            <Route path="member/reports" element={<MemberReportsPage />} />
           </Route>
+
         </Route>
 
         {/* 🚫 Fallback */}
         <Route path="*" element={<Navigate to="/" replace />} />
+
       </Routes>
 
       <Toaster position="top-center" />

@@ -13,7 +13,6 @@ import {
   Settings
 } from "lucide-react";
 import logo from "../assets/smartchamalogo.jpeg";
-import { path } from "framer-motion/client";
 
 export default function DashboardLayout() {
   const navigate = useNavigate();
@@ -38,23 +37,30 @@ export default function DashboardLayout() {
     { name: "Dashboard", path: "/dashboard/chairperson", icon: LayoutDashboard },
     { name: "Members", path: "/dashboard/chairperson/members", icon: Users },
     { name: "Contributions", path: "/dashboard/chairperson/contributions", icon: Wallet },
+    { name: "Loans", path: "/dashboard/chairperson/loans", icon: Wallet },
+    { name: "Activities", path: "/dashboard/chairperson/activities", icon: Wallet },
+    { name: "Voting", path: "/dashboard/chairperson/voting", icon: Users },
     { name: "Reports", path: "/dashboard/chairperson/reports", icon: BarChart3 },
-    
+    {name:"Settings", path:"/dashboard/chairperson/setting", icon: Settings},
   ];
 
   const memberLinks = [
     { name: "Dashboard", path: "/dashboard/member", icon: LayoutDashboard },
     { name: "My Contributions", path: "/dashboard/member/mycontributions", icon: Wallet },
-    { name: "Loan", path:"/dashboard/member/myloan", icon:Wallet},
-    {name:"Notification", path:"/dashboard/member/notification", icon:Bell},
-    {name:"History" , path:"/dashboard/member/history", icon:Wallet },
-    {name:"Voting", path:"/dashboard/member/voting", icon:Users},
-    {name:"Reports", path:"/dashboard/member/reports", icon:BarChart3},
-    {name:"Setting",path:"/dashboard/member/setting", icon: Settings},
-    
+    { name: "Loan", path: "/dashboard/member/myloan", icon: Wallet },
+    { name: "Notification", path: "/dashboard/member/notification", icon: Bell },
+    { name: "History", path: "/dashboard/member/history", icon: Wallet },
+    { name: "Voting", path: "/dashboard/member/voting", icon: Users },
+    { name: "Reports", path: "/dashboard/member/reports", icon: BarChart3 },
+    { name: "Setting", path: "/dashboard/member/setting", icon: Settings },
   ];
 
-  const navLinks = user?.role === "chairperson" ? chairLinks : memberLinks;
+  const navLinks =
+    user?.role === "chairperson"
+      ? chairLinks
+      : user?.role === "member"
+      ? memberLinks
+      : [];
 
   const isActive = (path) =>
     location.pathname === path || location.pathname.startsWith(path);
@@ -76,7 +82,7 @@ export default function DashboardLayout() {
           fixed md:static z-50 top-0 left-0
           h-screen bg-white border-r
           flex flex-col transition-all duration-300
-          ${collapsed ? "w-20" : "w-68"}
+          ${collapsed ? "w-20" : "w-64"}
           ${open ? "translate-x-0" : "-translate-x-full"}
           md:translate-x-0
         `}
@@ -91,7 +97,6 @@ export default function DashboardLayout() {
             )}
           </div>
 
-          {/* collapse toggle (desktop only) */}
           <button
             onClick={() => setCollapsed(!collapsed)}
             className="hidden md:flex text-gray-600 hover:text-green-600"
@@ -112,7 +117,7 @@ export default function DashboardLayout() {
                 {user?.full_name || "User"}
               </p>
               <p className="text-xs text-gray-500 capitalize">
-                {user?.role || "member"}
+                {user?.role || ""}
               </p>
             </div>
           )}
@@ -158,10 +163,7 @@ export default function DashboardLayout() {
         <header className="bg-white border-b px-4 md:px-6 py-4 flex items-center justify-between">
 
           <div className="flex items-center gap-3">
-            <button
-              onClick={() => setOpen(true)}
-              className="md:hidden"
-            >
+            <button onClick={() => setOpen(true)} className="md:hidden">
               <Menu />
             </button>
 
@@ -180,7 +182,7 @@ export default function DashboardLayout() {
               </span>
             </button>
 
-            {/* NOTIF DROPDOWN */}
+            {/* DROPDOWN */}
             <AnimatePresence>
               {showNotif && (
                 <motion.div
@@ -207,9 +209,8 @@ export default function DashboardLayout() {
           </div>
         </header>
 
-        {/* PAGE TRANSITIONS */}
+        {/* CONTENT */}
         <main className="flex-1 p-4 md:p-8 overflow-y-auto">
-
           <AnimatePresence mode="wait">
             <motion.div
               key={location.pathname}
@@ -221,8 +222,8 @@ export default function DashboardLayout() {
               <Outlet />
             </motion.div>
           </AnimatePresence>
-
         </main>
+
       </div>
     </div>
   );

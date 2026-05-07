@@ -264,6 +264,7 @@ export default function RegisterChama() {
                 <Confetti width={window.innerWidth} height={window.innerHeight} />
                 <CheckCircle className="mx-auto text-green-700 w-16 h-16" />
                 <h3 className="text-2xl font-bold text-green-700">Chama Created!</h3>
+                  <span className="break-all">{generated.inviteLink}</span>
                 <p className="text-gray-600">Your members can now join using the link above.</p>
                 <button
                   onClick={() => (window.location.href = "/auth/login")}
